@@ -1,0 +1,462 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Bac à sable JavaScript | EXPERNET - Sirel976</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;700&family=Space+Grotesk:wght@400;600;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg-darkest: #0a0f1a;
+            --bg-dark: #0f172a;
+            --bg-panel: #1e293b;
+            --accent-js: #F7DF1E;
+            --accent-cyan: #06b6d4;
+            --accent-green: #22c55e;
+            --accent-red: #ef4444;
+            --accent-yellow: #fbbf24;
+            --accent-purple: #a855f7;
+            --text-main: #e2e8f0;
+            --text-muted: #94a3b8;
+        }
+        body {
+            font-family: 'Space Grotesk', sans-serif;
+            background: var(--bg-darkest);
+            color: var(--text-main);
+            min-height: 100vh;
+            overflow-x: hidden;
+        }
+        .font-mono { font-family: 'JetBrains Mono', monospace; }
+        .cyber-grid {
+            position: fixed; inset: 0;
+            background-image:
+                linear-gradient(rgba(247, 223, 30, 0.03) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(247, 223, 30, 0.03) 1px, transparent 1px);
+            background-size: 50px 50px;
+            pointer-events: none; z-index: 0;
+        }
+        .panel {
+            background: var(--bg-panel);
+            border-radius: 12px;
+            border: 1px solid rgba(247, 223, 30, 0.2);
+            box-shadow: 0 25px 50px -12px rgba(0,0,0,0.5);
+            display: flex; flex-direction: column;
+            overflow: hidden;
+        }
+        .panel-header {
+            background: linear-gradient(135deg, var(--bg-darkest), var(--bg-dark));
+            padding: 12px 16px;
+            display: flex; align-items: center; justify-content: space-between;
+            border-bottom: 1px solid rgba(247, 223, 30, 0.15);
+        }
+        .code-input {
+            background: #0b1120;
+            border: none;
+            color: var(--text-main);
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 14px;
+            line-height: 1.6;
+            padding: 16px;
+            width: 100%;
+            flex: 1;
+            resize: none;
+            tab-size: 4;
+        }
+        .code-input:focus { outline: none; }
+        .console {
+            background: #0b1120;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 13px;
+            line-height: 1.6;
+            padding: 16px;
+            flex: 1;
+            overflow-y: auto;
+            white-space: pre-wrap;
+            word-break: break-word;
+        }
+        .log-line { padding: 2px 0; border-bottom: 1px solid rgba(255,255,255,0.04); }
+        .log-log   { color: var(--text-main); }
+        .log-info  { color: var(--accent-cyan); }
+        .log-warn  { color: var(--accent-yellow); }
+        .log-error { color: var(--accent-red); }
+        .log-prefix { opacity: 0.5; user-select: none; }
+        .log-type { font-size: 10px; padding: 1px 6px; border-radius: 4px; margin-right: 8px; text-transform: uppercase; }
+        .type-warn  { background: rgba(251,191,36,0.15); color: var(--accent-yellow); }
+        .type-error { background: rgba(239,68,68,0.15); color: var(--accent-red); }
+        .type-info  { background: rgba(6,182,212,0.15); color: var(--accent-cyan); }
+        ::-webkit-scrollbar { width: 8px; height: 8px; }
+        ::-webkit-scrollbar-track { background: transparent; }
+        ::-webkit-scrollbar-thumb { background: var(--accent-js); border-radius: 4px; }
+        .btn {
+            border: none; border-radius: 8px;
+            font-weight: 600; cursor: pointer;
+            transition: all 0.25s;
+            display: inline-flex; align-items: center; gap: 6px;
+        }
+        .btn-run {
+            background: linear-gradient(135deg, var(--accent-green), #16a34a);
+            color: white; padding: 10px 22px;
+        }
+        .btn-run:hover { transform: translateY(-2px); box-shadow: 0 6px 20px -6px rgba(34,197,94,0.6); }
+        .btn-ghost {
+            background: rgba(255,255,255,0.06); color: var(--text-muted);
+            padding: 10px 16px;
+        }
+        .btn-ghost:hover { background: rgba(255,255,255,0.12); color: white; }
+        .example-btn {
+            background: rgba(247,223,30,0.08);
+            border: 1px solid rgba(247,223,30,0.2);
+            color: var(--accent-js);
+            padding: 6px 12px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        .example-btn:hover { background: rgba(247,223,30,0.2); transform: translateY(-1px); }
+        .switch {
+            position: relative; width: 40px; height: 22px;
+            background: rgba(255,255,255,0.15); border-radius: 11px;
+            cursor: pointer; transition: background 0.25s;
+        }
+        .switch.on { background: var(--accent-green); }
+        .switch::after {
+            content: ''; position: absolute; top: 2px; left: 2px;
+            width: 18px; height: 18px; border-radius: 50%;
+            background: white; transition: transform 0.25s;
+        }
+        .switch.on::after { transform: translateX(18px); }
+    </style>
+</head>
+<body>
+    <div class="cyber-grid"></div>
+
+    <div class="relative z-10 max-w-7xl mx-auto px-4 py-6">
+
+        <!-- TOP BAR -->
+        <div class="flex flex-wrap items-center justify-between gap-4 mb-5">
+            <div class="flex items-center gap-3">
+                <a href="index.html" class="btn-ghost btn text-sm">&larr; Accueil</a>
+                <div>
+                    <h1 class="text-2xl font-bold">&#x1F9EA; Bac &agrave; sable <span class="text-yellow-400">JavaScript</span></h1>
+                    <p class="text-slate-400 text-sm">Tapez du code, voyez le r&eacute;sultat en direct.</p>
+                </div>
+            </div>
+            <div class="flex items-center gap-4">
+                <div class="flex items-center gap-2 text-sm text-slate-300">
+                    <span>Ex&eacute;cution auto</span>
+                    <div id="auto-switch" class="switch on" onclick="toggleAuto()"></div>
+                </div>
+                <button class="btn btn-ghost text-sm" onclick="clearAll()">&#x1F5D1; Effacer</button>
+                <button class="btn btn-run" onclick="runCode()">&#x25B6; Ex&eacute;cuter</button>
+            </div>
+        </div>
+
+        <!-- EXAMPLES -->
+        <div class="flex flex-wrap items-center gap-2 mb-5">
+            <span class="text-slate-400 text-sm mr-1">&#x1F4DA; Exemples :</span>
+            <button class="example-btn" onclick="loadExample('variables')">Variables &amp; types</button>
+            <button class="example-btn" onclick="loadExample('conditions')">Conditions</button>
+            <button class="example-btn" onclick="loadExample('boucles')">Boucles</button>
+            <button class="example-btn" onclick="loadExample('fonctions')">Fonctions</button>
+            <button class="example-btn" onclick="loadExample('tableaux')">Tableaux</button>
+            <button class="example-btn" onclick="loadExample('objets')">Objets</button>
+            <button class="example-btn" onclick="loadExample('chaines')">Cha&icirc;nes</button>
+        </div>
+
+        <!-- EDITOR + CONSOLE -->
+        <div class="grid lg:grid-cols-2 gap-5" style="height: 65vh; min-height: 420px;">
+
+            <!-- EDITOR -->
+            <div class="panel">
+                <div class="panel-header">
+                    <div class="flex items-center gap-2">
+                        <div class="w-3 h-3 rounded-full bg-red-500"></div>
+                        <div class="w-3 h-3 rounded-full bg-yellow-500"></div>
+                        <div class="w-3 h-3 rounded-full bg-green-500"></div>
+                        <span class="font-mono text-slate-400 text-sm ml-2">script.js</span>
+                    </div>
+                    <span class="text-xs text-slate-500 font-mono">Ctrl + Entr&eacute;e pour ex&eacute;cuter</span>
+                </div>
+                <textarea id="code" class="code-input" spellcheck="false" placeholder="// Tapez votre code JavaScript ici...
+console.log('Bonjour Mayotte !');"></textarea>
+            </div>
+
+            <!-- CONSOLE -->
+            <div class="panel">
+                <div class="panel-header">
+                    <span class="font-mono text-slate-400 text-sm">&#x1F4BB; Console</span>
+                    <span id="status" class="text-xs font-mono text-slate-500">En attente...</span>
+                </div>
+                <div id="console" class="console"><span class="text-slate-600">// La sortie de votre code s'affichera ici...</span></div>
+            </div>
+        </div>
+
+        <p class="text-center text-slate-600 text-xs mt-4">
+            Sirel976 &mdash; Formation JavaScript &middot; Bac &agrave; sable p&eacute;dagogique
+        </p>
+    </div>
+
+    <script>
+        // ==================== EXEMPLES ====================
+        const EXEMPLES = {
+            variables:
+`// Variables et types
+const prenom = "Anli";      // string (texte)
+let age = 25;                // number (nombre)
+const estEtudiant = true;    // boolean (vrai/faux)
+
+console.log("Prenom :", prenom);
+console.log("Age :", age);
+console.log("Type de age :", typeof age);
+console.log("Etudiant ?", estEtudiant);`,
+
+            conditions:
+`// Conditions if / else if / else
+let note = 14;
+
+if (note >= 16) {
+    console.log("Tres bien");
+} else if (note >= 12) {
+    console.log("Bien");
+} else if (note >= 10) {
+    console.log("Passable");
+} else {
+    console.log("Insuffisant");
+}
+
+// switch
+let jour = 3;
+switch (jour) {
+    case 1: console.log("Lundi"); break;
+    case 3: console.log("Mercredi"); break;
+    default: console.log("Autre jour");
+}`,
+
+            boucles:
+`// Boucle for
+for (let i = 1; i <= 5; i++) {
+    console.log("Tour numero " + i);
+}
+
+// for...of sur un tableau
+const villes = ["Mamoudzou", "Koungou", "Dembeni"];
+for (const ville of villes) {
+    console.log(ville);
+}
+
+// while
+let compteur = 3;
+while (compteur > 0) {
+    console.log("Decompte : " + compteur);
+    compteur--;
+}`,
+
+            fonctions:
+`// Fonction classique
+function total(prix, quantite) {
+    return prix * quantite;
+}
+console.log("Total :", total(10, 3));
+
+// Fonction flechee
+const doubler = n => n * 2;
+console.log("Double de 8 :", doubler(8));
+
+// Callback avec map
+const prix = [10, 20, 30];
+const avecTaxe = prix.map(p => p * 1.2);
+console.log("Avec taxe :", avecTaxe);`,
+
+            tableaux:
+`// Tableaux et methodes
+const nombres = [5, 12, 8, 20, 3];
+
+console.log("Tableau :", nombres);
+console.log("Longueur :", nombres.length);
+console.log("Premier :", nombres[0]);
+
+// filter : garder les > 10
+const grands = nombres.filter(n => n > 10);
+console.log("Superieurs a 10 :", grands);
+
+// reduce : somme totale
+const somme = nombres.reduce((acc, n) => acc + n, 0);
+console.log("Somme :", somme);`,
+
+            objets:
+`// Objets
+const etudiant = {
+    nom: "Faiz Abdallah",
+    groupe: "DWWM1",
+    notes: [14, 16, 12]
+};
+
+console.log("Nom :", etudiant.nom);
+console.log("Groupe :", etudiant["groupe"]);
+
+// Moyenne des notes
+const total = etudiant.notes.reduce((a, b) => a + b, 0);
+console.log("Moyenne :", total / etudiant.notes.length);
+
+// Destructuring
+const { nom, groupe } = etudiant;
+console.log(nom + " - " + groupe);`,
+
+            chaines:
+`// Chaines de caracteres
+const produit = "GariCo";
+const ville = "Mayotte";
+
+// Concatenation
+console.log("Application " + produit);
+
+// Template literals (backticks)
+console.log(\`\${produit} est utilise a \${ville}\`);
+
+// Methodes utiles
+console.log("Majuscules :", produit.toUpperCase());
+console.log("Longueur :", produit.length);
+console.log("Contient 'Co' ?", produit.includes("Co"));`
+        };
+
+        let autoRun = true;
+        let debounceTimer = null;
+
+        const codeEl = document.getElementById('code');
+        const consoleEl = document.getElementById('console');
+        const statusEl = document.getElementById('status');
+
+        // ==================== FORMATAGE DES VALEURS ====================
+        function formatValue(v) {
+            if (v === null) return 'null';
+            if (v === undefined) return 'undefined';
+            if (typeof v === 'string') return v;
+            if (typeof v === 'function') return v.toString();
+            if (typeof v === 'object') {
+                try { return JSON.stringify(v, null, 2); }
+                catch (e) { return String(v); }
+            }
+            return String(v);
+        }
+
+        function escapeHtml(s) {
+            return s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+        }
+
+        // ==================== EXECUTION ====================
+        function runCode() {
+            const code = codeEl.value;
+            const lines = [];
+
+            const original = {
+                log: console.log, info: console.info,
+                warn: console.warn, error: console.error
+            };
+
+            function capture(type) {
+                return function(...args) {
+                    lines.push({ type, text: args.map(formatValue).join(' ') });
+                    original[type].apply(console, args);
+                };
+            }
+            console.log = capture('log');
+            console.info = capture('info');
+            console.warn = capture('warn');
+            console.error = capture('error');
+
+            let runtimeError = null;
+            try {
+                // Fonction anonyme pour isoler le scope a chaque execution
+                (function() { eval(code); })();
+            } catch (err) {
+                runtimeError = err;
+            }
+
+            console.log = original.log;
+            console.info = original.info;
+            console.warn = original.warn;
+            console.error = original.error;
+
+            render(lines, runtimeError);
+        }
+
+        function render(lines, runtimeError) {
+            let html = '';
+            lines.forEach(l => {
+                let typeTag = '';
+                if (l.type === 'warn')  typeTag = '<span class="log-type type-warn">warn</span>';
+                if (l.type === 'error') typeTag = '<span class="log-type type-error">error</span>';
+                if (l.type === 'info')  typeTag = '<span class="log-type type-info">info</span>';
+                html += `<div class="log-line log-${l.type}"><span class="log-prefix">&gt; </span>${typeTag}${escapeHtml(l.text)}</div>`;
+            });
+
+            if (runtimeError) {
+                html += `<div class="log-line log-error"><span class="log-type type-error">erreur</span>${escapeHtml(runtimeError.name + ' : ' + runtimeError.message)}</div>`;
+            }
+
+            if (!html) {
+                html = '<span class="text-slate-600">// Aucune sortie (utilisez console.log pour afficher un resultat)</span>';
+            }
+
+            consoleEl.innerHTML = html;
+            consoleEl.scrollTop = consoleEl.scrollHeight;
+
+            const count = lines.length;
+            if (runtimeError) {
+                statusEl.textContent = '⚠ Erreur';
+                statusEl.className = 'text-xs font-mono text-red-400';
+            } else {
+                statusEl.textContent = count + (count > 1 ? ' sorties' : ' sortie');
+                statusEl.className = 'text-xs font-mono text-green-400';
+            }
+        }
+
+        function clearAll() {
+            codeEl.value = '';
+            consoleEl.innerHTML = '<span class="text-slate-600">// La sortie de votre code s\'affichera ici...</span>';
+            statusEl.textContent = 'En attente...';
+            statusEl.className = 'text-xs font-mono text-slate-500';
+            codeEl.focus();
+        }
+
+        function loadExample(key) {
+            codeEl.value = EXEMPLES[key] || '';
+            runCode();
+            codeEl.focus();
+        }
+
+        function toggleAuto() {
+            autoRun = !autoRun;
+            document.getElementById('auto-switch').classList.toggle('on', autoRun);
+            if (autoRun) runCode();
+        }
+
+        // ==================== EVENEMENTS ====================
+        codeEl.addEventListener('input', () => {
+            if (!autoRun) return;
+            clearTimeout(debounceTimer);
+            debounceTimer = setTimeout(runCode, 600);
+        });
+
+        // Tabulation dans le textarea
+        codeEl.addEventListener('keydown', (e) => {
+            if (e.key === 'Tab') {
+                e.preventDefault();
+                const start = codeEl.selectionStart, end = codeEl.selectionEnd;
+                codeEl.value = codeEl.value.substring(0, start) + '    ' + codeEl.value.substring(end);
+                codeEl.selectionStart = codeEl.selectionEnd = start + 4;
+            }
+            if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') {
+                e.preventDefault();
+                runCode();
+            }
+        });
+
+        // Exemple par defaut au chargement
+        loadExample('variables');
+    </script>
+</body>
+</html>
