@@ -89,6 +89,46 @@
             box-shadow: 0 20px 50px -15px rgba(168,85,247,0.35);
             border-color: rgba(168,85,247,0.5);
         }
+        /* ÉTAT VERROUILLÉ (cadena) */
+        .card.locked {
+            cursor: not-allowed;
+            filter: grayscale(0.85) brightness(0.7);
+            opacity: 0.65;
+        }
+        .card.locked:hover {
+            transform: none;
+            border-color: rgba(255,255,255,0.06);
+            box-shadow: none;
+        }
+        .card.locked:hover::before { opacity: 0; }
+        .card.locked .start-btn { display: none; }
+        .lock-badge {
+            position: absolute;
+            top: 14px;
+            right: 14px;
+            z-index: 5;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            background: rgba(15, 23, 42, 0.85);
+            border: 1px solid rgba(255,255,255,0.12);
+            color: #cbd5e1;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 11px;
+            font-weight: 600;
+            padding: 5px 10px;
+            border-radius: 9999px;
+            backdrop-filter: blur(4px);
+        }
+        .lock-note {
+            margin-top: 4px;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            color: #94a3b8;
+            font-size: 13px;
+            font-weight: 600;
+        }
     </style>
 </head>
 <body>
@@ -113,7 +153,7 @@
         <div class="grid md:grid-cols-2 lg:grid-cols-3 gap-6 mb-10">
 
             <!-- Conditions -->
-            <a href="simulateur-conditions.html" class="card p-6 block" style="--card-glow:rgba(59,130,246,0.1); --card-border:rgba(59,130,246,0.4); --card-shadow:rgba(59,130,246,0.3);">
+            <a href="simulateur-conditions.html" data-tp="conditions" class="card p-6 block" style="--card-glow:rgba(59,130,246,0.1); --card-border:rgba(59,130,246,0.4); --card-shadow:rgba(59,130,246,0.3);">
                 <div class="relative">
                     <div class="flex items-center justify-between mb-5">
                         <div class="card-icon bg-blue-500/15 text-blue-400">&#x1F500;</div>
@@ -135,7 +175,7 @@
             </a>
 
             <!-- Boucles -->
-            <a href="simulateur-boucles.html" class="card p-6 block" style="--card-glow:rgba(34,197,94,0.1); --card-border:rgba(34,197,94,0.4); --card-shadow:rgba(34,197,94,0.3);">
+            <a href="simulateur-boucles.html" data-tp="boucles" class="card p-6 block" style="--card-glow:rgba(34,197,94,0.1); --card-border:rgba(34,197,94,0.4); --card-shadow:rgba(34,197,94,0.3);">
                 <div class="relative">
                     <div class="flex items-center justify-between mb-5">
                         <div class="card-icon bg-green-500/15 text-green-400">&#x1F501;</div>
@@ -157,7 +197,7 @@
             </a>
 
             <!-- Fonctions -->
-            <a href="simulateur-fonctions.html" class="card p-6 block" style="--card-glow:rgba(247,223,30,0.1); --card-border:rgba(247,223,30,0.4); --card-shadow:rgba(247,223,30,0.3);">
+            <a href="simulateur-fonctions.html" data-tp="fonctions" class="card p-6 block" style="--card-glow:rgba(247,223,30,0.1); --card-border:rgba(247,223,30,0.4); --card-shadow:rgba(247,223,30,0.3);">
                 <div class="relative">
                     <div class="flex items-center justify-between mb-5">
                         <div class="card-icon bg-yellow-500/15 text-yellow-400">&#x2699;</div>
@@ -179,7 +219,7 @@
             </a>
 
             <!-- Evenements -->
-            <a href="simulateur-evenements.html" class="card p-6 block" style="--card-glow:rgba(168,85,247,0.1); --card-border:rgba(168,85,247,0.4); --card-shadow:rgba(168,85,247,0.3);">
+            <a href="simulateur-evenements.html" data-tp="evenements" class="card p-6 block" style="--card-glow:rgba(168,85,247,0.1); --card-border:rgba(168,85,247,0.4); --card-shadow:rgba(168,85,247,0.3);">
                 <div class="relative">
                     <div class="flex items-center justify-between mb-5">
                         <div class="card-icon bg-purple-500/15 text-purple-400">&#x1F5B1;</div>
@@ -201,7 +241,7 @@
             </a>
 
             <!-- Formulaires -->
-            <a href="simulateur-formulaires.html" class="card p-6 block" style="--card-glow:rgba(6,182,212,0.1); --card-border:rgba(6,182,212,0.4); --card-shadow:rgba(6,182,212,0.3);">
+            <a href="simulateur-formulaires.html" data-tp="formulaires" class="card p-6 block" style="--card-glow:rgba(6,182,212,0.1); --card-border:rgba(6,182,212,0.4); --card-shadow:rgba(6,182,212,0.3);">
                 <div class="relative">
                     <div class="flex items-center justify-between mb-5">
                         <div class="card-icon bg-cyan-500/15 text-cyan-400">&#x1F4DD;</div>
@@ -241,5 +281,43 @@
             <p>Sirel976 &mdash; Formation JavaScript &middot; EXPERNET (Mayotte / R&eacute;union)</p>
         </footer>
     </div>
+
+    <script>
+        // ====================================================================
+        //  VERROUILLAGE DES TP
+        //  Pour DEVERROUILLER un TP : retirez son nom de ce tableau.
+        //  Pour VERROUILLER un TP : ajoutez son nom dans ce tableau.
+        //  Noms disponibles : "conditions", "boucles", "fonctions",
+        //                      "evenements", "formulaires"
+        // ====================================================================
+        const TP_VERROUILLES = ["boucles", "fonctions", "evenements", "formulaires"];
+
+        document.querySelectorAll('.card[data-tp]').forEach(function (card) {
+            const nom = card.getAttribute('data-tp');
+            if (!TP_VERROUILLES.includes(nom)) return;
+
+            // Marque la carte comme verrouillee
+            card.classList.add('locked');
+            card.setAttribute('aria-disabled', 'true');
+
+            // Bloque l'ouverture du TP
+            card.addEventListener('click', function (e) {
+                e.preventDefault();
+            });
+
+            // Badge cadena en haut a droite
+            const badge = document.createElement('div');
+            badge.className = 'lock-badge';
+            badge.innerHTML = '\u{1F512} Verrouillé';
+            card.appendChild(badge);
+
+            // Mention sous le titre
+            const note = document.createElement('div');
+            note.className = 'lock-note';
+            note.innerHTML = '\u{1F512} TP bientôt disponible';
+            const titre = card.querySelector('h2');
+            if (titre) titre.insertAdjacentElement('afterend', note);
+        });
+    </script>
 </body>
 </html>
