@@ -1279,7 +1279,8 @@
             doc.text('Etudiant : ' + studentName, margin, y); y += 16;
             doc.text('Groupe : ' + studentGroup, margin, y); y += 16;
             doc.text('Date : ' + new Date().toLocaleString('fr-FR'), margin, y); y += 16;
-            doc.text('Temps total : ' + tmin + ':' + tsec, margin, y); y += 24;
+            doc.text('Temps total : ' + tmin + ':' + tsec, margin, y); y += 16;
+            doc.text('Indices utilises : ' + hintsUsed + ' / ' + missions.length, margin, y); y += 24;
 
             // ---------- BLOC NOTE ----------
             const n20 = noteSur20();
@@ -1339,6 +1340,10 @@
                     writeWrapped('[X] Mission passee (non realisee)', { size: 10, color: red });
                 } else {
                     writeWrapped('[X] Mission non traitee', { size: 10, color: red });
+                }
+
+                if (m.hintShown) {
+                    writeWrapped('[!] Indice utilise pour cette mission', { size: 9, style: 'italic', color: [202, 138, 4] });
                 }
 
                 if (log.code && log.code.trim()) {
