@@ -985,6 +985,85 @@ form.<span class="function">addEventListener</span>(<span class="string">"submit
         let finalElapsed = 0;
         let missionLog = [];
 
+        // ==================== SAUVEGARDE AUTOMATIQUE (localStorage) ====================
+        const STORAGE_KEY = 'formulaires-challenge-save';
+
+        // Enregistre l'etat de la partie dans le navigateur
+        function saveState() {
+            if (!studentName) return; // pas de partie en cours
+            const elapsed = startTime ? Math.floor((Date.now() - startTime) / 1000) : 0;
+            const state = {
+                currentMission,
+                score,
+                hintsUsed,
+                skipsUsed,
+                errorsCount,
+                missionsPassed,
+                studentName,
+                studentGroup,
+                missionLog,
+                elapsed,
+                hintShownIds: missions.filter(m => m.hintShown).map(m => m.id)
+            };
+            try {
+                localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+            } catch (e) {
+                // localStorage indisponible (mode prive, quota...) : on ignore
+            }
+        }
+
+        // Efface la sauvegarde (fin de TP ou recommencer)
+        function clearState() {
+            try { localStorage.removeItem(STORAGE_KEY); } catch (e) {}
+        }
+
+        // Reprend une partie sauvegardee. Retourne true si une partie a ete restauree.
+        function loadState() {
+            let raw = null;
+            try { raw = localStorage.getItem(STORAGE_KEY); } catch (e) { return false; }
+            if (!raw) return false;
+            let state;
+            try { state = JSON.parse(raw); } catch (e) { clearState(); return false; }
+            // Partie terminee ou corrompue : on ne restaure pas
+            if (!state || typeof state.currentMission !== 'number' || state.currentMission >= missions.length) {
+                clearState();
+                return false;
+            }
+
+            currentMission = state.currentMission;
+            score = typeof state.score === 'number' ? state.score : CONFIG.baseScore;
+            hintsUsed = state.hintsUsed || 0;
+            skipsUsed = state.skipsUsed || 0;
+            errorsCount = state.errorsCount || 0;
+            missionsPassed = state.missionsPassed || 0;
+            studentName = state.studentName || '';
+            studentGroup = state.studentGroup || '';
+            missionLog = Array.isArray(state.missionLog) && state.missionLog.length === missions.length
+                ? state.missionLog
+                : missions.map(() => ({ status: 'non-traitee', code: '' }));
+
+            // Restaure les indices deja consultes (pour ne pas re-penaliser)
+            (state.hintShownIds || []).forEach(id => {
+                const m = missions.find(x => x.id === id);
+                if (m) m.hintShown = true;
+            });
+
+            // On bascule directement sur l'ecran de jeu, a la mission en cours
+            document.getElementById('login-screen').classList.add('hidden');
+            document.getElementById('game-screen').classList.remove('hidden');
+            document.getElementById('student-display').textContent = `${studentName} (${studentGroup})`;
+
+            // Le chrono reprend la ou il en etait (le temps page fermee n'est pas compte)
+            startTime = Date.now() - (state.elapsed || 0) * 1000;
+            timerInterval = setInterval(updateTimer, 1000);
+
+            // Reinstalle la capture console + la zone de test, comme dans startGame
+            installCapture();
+            resetSandbox();
+            displayMission(currentMission);
+            return true;
+        }
+
         // ==================== CAPTURE CONSOLE & ALERT ====================
         const originalLog = console.log;
         const originalAlert = window.alert;
@@ -1076,6 +1155,7 @@ form.<span class="function">addEventListener</span>(<span class="string">"submit
             installCapture();
             resetSandbox();
             displayMission(0);
+            saveState();
         }
 
         function updateTimer() {
@@ -1166,12 +1246,14 @@ form.<span class="function">addEventListener</span>(<span class="string">"submit
                 displaySuccess();
                 missionsPassed++;
                 missionLog[currentMission] = { status: 'reussie', code: code };
+                saveState();
                 setTimeout(() => nextMission(), 1500);
             } else {
                 displayError();
                 errorsCount++;
                 score -= CONFIG.errorPenalty;
                 updateScore();
+                saveState();
             }
         }
 
@@ -1202,6 +1284,7 @@ form.<span class="function">addEventListener</span>(<span class="string">"submit
                     hintsUsed++;
                     score -= CONFIG.hintPenalty;
                     updateScore();
+                    saveState();
                 }
             }
         }
@@ -1211,6 +1294,7 @@ form.<span class="function">addEventListener</span>(<span class="string">"submit
             score -= CONFIG.skipPenalty;
             updateScore();
             missionLog[currentMission] = { status: 'passee', code: document.getElementById('code-input').value };
+            saveState();
             nextMission();
         }
 
@@ -1221,12 +1305,14 @@ form.<span class="function">addEventListener</span>(<span class="string">"submit
                 finishGame();
             } else {
                 displayMission(currentMission);
+                saveState();
             }
         }
 
         // ==================== GAME END ====================
         function finishGame() {
             clearInterval(timerInterval);
+            clearState(); // TP termine : plus rien a restaurer
 
             const elapsed = Math.floor((Date.now() - startTime) / 1000);
             finalElapsed = elapsed;
@@ -1275,6 +1361,7 @@ form.<span class="function">addEventListener</span>(<span class="string">"submit
         }
 
         function restartGame() {
+            clearState();
             location.reload();
         }
 
@@ -1477,6 +1564,12 @@ form.<span class="function">addEventListener</span>(<span class="string">"submit
             const fileName = 'Attestation-Formulaires-' + studentName.replace(/\s+/g, '_') + '-' + new Date().toISOString().split('T')[0] + '.pdf';
             doc.save(fileName);
         }
+
+        // Reprise automatique d'une partie en cours au chargement de la page
+        loadState();
+
+        // Sauvegarde de securite avant un rechargement / une fermeture (chrono a jour)
+        window.addEventListener('beforeunload', saveState);
 
         // Keyboard shortcuts
         document.addEventListener('keydown', function(e) {
