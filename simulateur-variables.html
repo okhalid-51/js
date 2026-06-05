@@ -1,0 +1,1443 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Simulateur Variables & types JavaScript | EXPERNET</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;700&family=Space+Grotesk:wght@400;600;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg-darkest: #0a0f1a;
+            --bg-dark: #0f172a;
+            --bg-panel: #1e293b;
+            --accent-js: #F7DF1E;
+            --accent-blue: #3b82f6;
+            --accent-cyan: #06b6d4;
+            --accent-green: #22c55e;
+            --accent-yellow: #fbbf24;
+            --accent-red: #ef4444;
+            --accent-purple: #a855f7;
+            --text-main: #e2e8f0;
+            --text-muted: #94a3b8;
+        }
+
+        body {
+            font-family: 'Space Grotesk', sans-serif;
+            background: var(--bg-darkest);
+            color: var(--text-main);
+            min-height: 100vh;
+            overflow-x: hidden;
+        }
+
+        .font-mono { font-family: 'JetBrains Mono', monospace; }
+
+        .cyber-grid {
+            position: fixed;
+            inset: 0;
+            background-image:
+                linear-gradient(rgba(247, 223, 30, 0.03) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(247, 223, 30, 0.03) 1px, transparent 1px);
+            background-size: 50px 50px;
+            pointer-events: none;
+            z-index: 0;
+        }
+
+        .glow-js { box-shadow: 0 0 20px rgba(247, 223, 30, 0.3); }
+        .glow-green { box-shadow: 0 0 20px rgba(34, 197, 94, 0.3); }
+        .glow-red { box-shadow: 0 0 20px rgba(239, 68, 68, 0.3); }
+
+        .code-editor {
+            background: var(--bg-panel);
+            border-radius: 12px;
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.6);
+            border: 1px solid rgba(247, 223, 30, 0.2);
+            display: flex;
+            flex-direction: column;
+            height: 100%;
+        }
+
+        .editor-header {
+            background: linear-gradient(135deg, var(--bg-darkest), var(--bg-dark));
+            padding: 12px 16px;
+            border-radius: 12px 12px 0 0;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            border-bottom: 1px solid rgba(247, 223, 30, 0.2);
+        }
+
+        .editor-body {
+            flex: 1;
+            padding: 16px;
+            overflow-y: auto;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 14px;
+        }
+
+        .code-input {
+            background: var(--bg-dark);
+            border: 1px solid rgba(247, 223, 30, 0.3);
+            border-radius: 8px;
+            padding: 16px;
+            color: var(--text-main);
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 14px;
+            width: 100%;
+            min-height: 150px;
+            resize: vertical;
+        }
+
+        .code-input:focus {
+            outline: none;
+            border-color: var(--accent-js);
+            box-shadow: 0 0 0 3px rgba(247, 223, 30, 0.2);
+        }
+
+        .output { color: var(--text-muted); margin-bottom: 8px; white-space: pre-wrap; line-height: 1.6; }
+        .output-error { color: var(--accent-red); }
+        .output-success { color: var(--accent-green); font-weight: bold; }
+        .output-warning { color: var(--accent-yellow); font-style: italic; }
+        .output-info { color: var(--accent-cyan); }
+
+        ::-webkit-scrollbar { width: 6px; }
+        ::-webkit-scrollbar-track { background: transparent; }
+        ::-webkit-scrollbar-thumb { background: var(--accent-js); border-radius: 3px; }
+
+        .mission-panel {
+            background: linear-gradient(145deg, var(--bg-panel), var(--bg-dark));
+            border: 1px solid rgba(247, 223, 30, 0.2);
+            border-radius: 16px;
+        }
+
+        .score-card {
+            background: linear-gradient(135deg, rgba(247, 223, 30, 0.1), rgba(6, 182, 212, 0.1));
+            border: 1px solid rgba(247, 223, 30, 0.3);
+            border-radius: 12px;
+        }
+
+        @keyframes pulse-timer {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.7; }
+        }
+        .timer-running { animation: pulse-timer 1s ease-in-out infinite; }
+
+        .progress-bar { transition: width 0.5s cubic-bezier(0.4, 0, 0.2, 1); }
+
+        .hint-btn {
+            transition: all 0.3s ease;
+            position: relative;
+            overflow: hidden;
+        }
+        .hint-btn::before {
+            content: '';
+            position: absolute;
+            inset: 0;
+            background: linear-gradient(90deg, transparent, rgba(255,255,255,0.1), transparent);
+            transform: translateX(-100%);
+            transition: transform 0.5s;
+        }
+        .hint-btn:hover::before { transform: translateX(100%); }
+
+        .category-badge {
+            font-size: 10px;
+            padding: 2px 8px;
+            border-radius: 9999px;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .modal-overlay {
+            position: fixed;
+            inset: 0;
+            background: rgba(0, 0, 0, 0.8);
+            backdrop-filter: blur(8px);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 1000;
+            opacity: 0;
+            visibility: hidden;
+            transition: all 0.3s;
+        }
+        .modal-overlay.active {
+            opacity: 1;
+            visibility: visible;
+        }
+        .modal-content {
+            background: var(--bg-panel);
+            border: 1px solid rgba(247, 223, 30, 0.3);
+            border-radius: 20px;
+            padding: 32px;
+            max-width: 500px;
+            width: 90%;
+            transform: scale(0.9);
+            transition: transform 0.3s;
+        }
+        .modal-overlay.active .modal-content {
+            transform: scale(1);
+        }
+
+        .grade-A { color: #22c55e; text-shadow: 0 0 20px rgba(34, 197, 94, 0.5); }
+        .grade-B { color: #3b82f6; text-shadow: 0 0 20px rgba(59, 130, 246, 0.5); }
+        .grade-C { color: #fbbf24; text-shadow: 0 0 20px rgba(251, 191, 36, 0.5); }
+        .grade-D { color: #f97316; text-shadow: 0 0 20px rgba(249, 115, 22, 0.5); }
+        .grade-F { color: #ef4444; text-shadow: 0 0 20px rgba(239, 68, 68, 0.5); }
+
+        .login-container {
+            background: var(--bg-panel);
+            border: 1px solid rgba(247, 223, 30, 0.3);
+            border-radius: 20px;
+            padding: 40px;
+            max-width: 450px;
+            width: 90%;
+        }
+        .login-input {
+            background: var(--bg-dark);
+            border: 1px solid rgba(247, 223, 30, 0.3);
+            border-radius: 10px;
+            padding: 14px 18px;
+            color: var(--text-main);
+            width: 100%;
+            font-size: 16px;
+            transition: all 0.3s;
+        }
+        .login-input:focus {
+            outline: none;
+            border-color: var(--accent-js);
+            box-shadow: 0 0 0 3px rgba(247, 223, 30, 0.2);
+        }
+        .login-btn {
+            background: linear-gradient(135deg, var(--accent-js), #eab308);
+            border: none;
+            border-radius: 10px;
+            padding: 14px 28px;
+            color: #1e293b;
+            font-weight: 600;
+            cursor: pointer;
+            width: 100%;
+            font-size: 16px;
+            transition: all 0.3s;
+        }
+        .login-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 30px -10px rgba(247, 223, 30, 0.5);
+        }
+
+        .run-btn {
+            background: linear-gradient(135deg, var(--accent-green), #16a34a);
+            border: none;
+            border-radius: 8px;
+            padding: 10px 20px;
+            color: white;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+        .run-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 20px -5px rgba(34, 197, 94, 0.5);
+        }
+
+        .console-output {
+            background: #0b1120;
+            border: 1px solid rgba(247, 223, 30, 0.2);
+            border-radius: 8px;
+            padding: 12px;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 13px;
+            min-height: 100px;
+            max-height: 200px;
+            overflow-y: auto;
+        }
+
+        /* HELP PANEL STYLES */
+        .help-panel {
+            position: fixed;
+            top: 0;
+            right: -500px;
+            width: 480px;
+            height: 100vh;
+            background: var(--bg-panel);
+            border-left: 1px solid rgba(247, 223, 30, 0.3);
+            z-index: 1001;
+            transition: right 0.3s ease;
+            overflow-y: auto;
+            box-shadow: -10px 0 30px rgba(0,0,0,0.5);
+        }
+        .help-panel.active {
+            right: 0;
+        }
+        .help-panel-header {
+            background: linear-gradient(135deg, var(--bg-darkest), var(--bg-dark));
+            padding: 20px;
+            border-bottom: 1px solid rgba(247, 223, 30, 0.2);
+            position: sticky;
+            top: 0;
+            z-index: 10;
+        }
+        .help-panel-body {
+            padding: 20px;
+        }
+        .help-section {
+            margin-bottom: 24px;
+        }
+        .help-section-title {
+            font-size: 14px;
+            font-weight: 700;
+            color: var(--accent-js);
+            margin-bottom: 12px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .help-card {
+            background: rgba(0,0,0,0.2);
+            border-radius: 8px;
+            padding: 12px;
+            margin-bottom: 10px;
+            border: 1px solid rgba(255,255,255,0.05);
+        }
+        .help-card-title {
+            font-weight: 600;
+            font-size: 13px;
+            margin-bottom: 8px;
+            color: var(--text-main);
+        }
+        .help-code {
+            background: #0b1120;
+            border-radius: 6px;
+            padding: 10px;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 12px;
+            color: var(--accent-js);
+            overflow-x: auto;
+            position: relative;
+            white-space: pre;
+        }
+        .help-code .comment {
+            color: #6b7280;
+        }
+        .help-code .keyword {
+            color: #c084fc;
+        }
+        .help-code .string {
+            color: #34d399;
+        }
+        .help-code .function {
+            color: #60a5fa;
+        }
+        .copy-btn {
+            position: absolute;
+            top: 6px;
+            right: 6px;
+            background: rgba(255,255,255,0.1);
+            border: none;
+            border-radius: 4px;
+            padding: 4px 8px;
+            font-size: 10px;
+            color: var(--text-muted);
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        .copy-btn:hover {
+            background: rgba(255,255,255,0.2);
+            color: white;
+        }
+        .help-tip {
+            background: rgba(6, 182, 212, 0.1);
+            border-left: 3px solid var(--accent-cyan);
+            padding: 10px 12px;
+            border-radius: 0 8px 8px 0;
+            font-size: 12px;
+            color: var(--text-muted);
+            margin-top: 8px;
+        }
+        .help-tabs {
+            display: flex;
+            gap: 8px;
+            margin-bottom: 16px;
+            flex-wrap: wrap;
+        }
+        .help-tab {
+            padding: 6px 12px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: 600;
+            cursor: pointer;
+            background: rgba(255,255,255,0.05);
+            border: 1px solid transparent;
+            color: var(--text-muted);
+            transition: all 0.2s;
+        }
+        .help-tab:hover {
+            background: rgba(255,255,255,0.1);
+        }
+        .help-tab.active {
+            background: rgba(247, 223, 30, 0.2);
+            border-color: var(--accent-js);
+            color: var(--accent-js);
+        }
+        .help-tab-content {
+            display: none;
+        }
+        .help-tab-content.active {
+            display: block;
+        }
+        .help-overlay {
+            position: fixed;
+            inset: 0;
+            background: rgba(0,0,0,0.5);
+            z-index: 1000;
+            opacity: 0;
+            visibility: hidden;
+            transition: all 0.3s;
+        }
+        .help-overlay.active {
+            opacity: 1;
+            visibility: visible;
+        }
+        .help-btn {
+            background: linear-gradient(135deg, rgba(247, 223, 30, 0.2), rgba(247, 223, 30, 0.1));
+            border: 1px solid rgba(247, 223, 30, 0.3);
+            color: var(--accent-js);
+            padding: 8px 16px;
+            border-radius: 8px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+        .help-btn:hover {
+            background: rgba(247, 223, 30, 0.3);
+            transform: translateY(-2px);
+        }
+
+        @media (max-width: 768px) {
+            .help-panel {
+                width: 100%;
+                right: -100%;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="cyber-grid"></div>
+
+    <!-- LOGIN SCREEN -->
+    <div id="login-screen" class="min-h-screen flex items-center justify-center p-4 relative z-10">
+        <div class="login-container text-center">
+            <div class="text-5xl mb-4">&#x1F500;</div>
+            <h1 class="text-3xl font-bold mb-2 bg-gradient-to-r from-yellow-400 to-amber-500 bg-clip-text text-transparent">
+                Variables & types Challenge
+            </h1>
+            <p class="text-slate-400 mb-8">TP Variables & types JavaScript : let / const / types - EXPERNET</p>
+
+            <form id="login-form" class="space-y-4">
+                <div class="text-left">
+                    <label class="text-sm text-slate-400 mb-1 block">Nom de l'&eacute;tudiant</label>
+                    <input type="text" id="student-name" class="login-input" placeholder="Ex: Jean Dupont" required>
+                </div>
+                <div class="text-left">
+                    <label class="text-sm text-slate-400 mb-1 block">Groupe / Classe</label>
+                    <input type="text" id="student-group" class="login-input" placeholder="Ex: DWWM1" required>
+                </div>
+                <button type="submit" class="login-btn mt-6">
+                    Commencer le TP &#x1F680;
+                </button>
+            </form>
+
+            <p class="text-xs text-slate-500 mt-6">
+                &#x23F1; Dur&eacute;e estim&eacute;e : 30-45 minutes<br>
+                &#x1F4CA; Note sur 100 points &mdash; 10 missions sur les variables & types
+            </p>
+        </div>
+    </div>
+
+    <!-- MAIN GAME SCREEN -->
+    <div id="game-screen" class="hidden min-h-screen p-4 md:p-6 relative z-10">
+
+        <!-- TOP BAR -->
+        <div class="flex flex-wrap justify-between items-center gap-4 mb-6">
+            <div class="flex items-center gap-3">
+                <span id="student-display" class="text-slate-400 font-mono text-sm"></span>
+            </div>
+
+            <div class="flex gap-4 items-center">
+                <button class="help-btn" onclick="toggleHelp()">
+                    &#x1F4DA; Aide
+                </button>
+
+                <div class="score-card px-5 py-3 flex items-center gap-3">
+                    <span class="text-2xl">&#x23F1;</span>
+                    <div>
+                        <div class="text-xs text-slate-400 uppercase tracking-wider">Temps</div>
+                        <div id="timer" class="font-mono text-xl font-bold timer-running">00:00</div>
+                    </div>
+                </div>
+
+                <div class="score-card px-5 py-3 flex items-center gap-3 glow-js">
+                    <span class="text-2xl">&#x2B50;</span>
+                    <div>
+                        <div class="text-xs text-slate-400 uppercase tracking-wider">Score</div>
+                        <div id="score" class="font-mono text-xl font-bold text-yellow-400">100</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- MAIN CONTENT -->
+        <div class="flex flex-col lg:flex-row gap-6">
+
+            <!-- LEFT: Mission Panel -->
+            <div class="lg:w-1/3">
+                <div class="mission-panel p-5 sticky top-6">
+                    <header class="flex items-center justify-between mb-4">
+                        <div>
+                            <h1 class="text-xl font-bold">Mission <span id="mission-number" class="text-yellow-400">1</span></h1>
+                            <span id="mission-category" class="category-badge bg-yellow-500/20 text-yellow-400 mt-1 inline-block">let</span>
+                        </div>
+                    </header>
+
+                    <div class="mb-4">
+                        <div class="flex justify-between text-xs text-slate-400 mb-1">
+                            <span>Progression</span>
+                            <span id="progress-text">0 / 10</span>
+                        </div>
+                        <div class="h-2 bg-slate-700 rounded-full overflow-hidden">
+                            <div id="progress-bar" class="h-full bg-gradient-to-r from-yellow-500 to-amber-400 progress-bar" style="width: 0%"></div>
+                        </div>
+                    </div>
+
+                    <div class="space-y-4">
+                        <div>
+                            <h2 class="text-sm font-semibold text-slate-400 mb-2">&#x26A1; Objectif</h2>
+                            <p id="mission-desc" class="text-slate-200 leading-relaxed"></p>
+                        </div>
+
+                        <div id="mission-hint" class="hidden bg-cyan-500/10 border border-cyan-500/30 rounded-lg p-3">
+                            <span class="text-cyan-400 text-sm">&#x1F4A1; Indice :</span>
+                            <p id="hint-text" class="text-slate-300 text-sm mt-1"></p>
+                        </div>
+
+                        <div id="expected-output" class="bg-slate-800/50 rounded-lg p-3">
+                            <span class="text-slate-400 text-sm">&#x1F3AF; R&eacute;sultat attendu :</span>
+                            <pre id="expected-text" class="text-green-400 text-sm mt-1 font-mono"></pre>
+                        </div>
+                    </div>
+
+                    <div class="grid grid-cols-3 gap-2 mt-4 text-center text-xs">
+                        <div class="bg-slate-800/50 rounded-lg p-2">
+                            <div class="text-slate-400">Indices</div>
+                            <div id="hints-used" class="font-bold text-cyan-400">0</div>
+                        </div>
+                        <div class="bg-slate-800/50 rounded-lg p-2">
+                            <div class="text-slate-400">Pass&eacute;es</div>
+                            <div id="skips-used" class="font-bold text-amber-400">0</div>
+                        </div>
+                        <div class="bg-slate-800/50 rounded-lg p-2">
+                            <div class="text-slate-400">Erreurs</div>
+                            <div id="errors-count" class="font-bold text-red-400">0</div>
+                        </div>
+                    </div>
+
+                    <div class="flex gap-2 mt-4">
+                        <button onclick="toggleHint()" class="hint-btn flex-1 bg-cyan-500/20 hover:bg-cyan-500/30 text-cyan-400 py-2 px-3 rounded-lg text-sm font-medium">
+                            &#x1F50D; Indice (-5 pts)
+                        </button>
+                        <button onclick="skipMission()" class="hint-btn flex-1 bg-amber-500/20 hover:bg-amber-500/30 text-amber-400 py-2 px-3 rounded-lg text-sm font-medium">
+                            &#x23E9; Passer (-15 pts)
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- RIGHT: Code Editor -->
+            <div class="lg:w-2/3">
+                <div class="code-editor">
+                    <div class="editor-header">
+                        <div class="flex items-center gap-2">
+                            <div class="w-3 h-3 rounded-full bg-red-500"></div>
+                            <div class="w-3 h-3 rounded-full bg-yellow-500"></div>
+                            <div class="w-3 h-3 rounded-full bg-green-500"></div>
+                        </div>
+                        <span class="font-mono text-slate-400 text-sm">variables.js</span>
+                        <span class="text-xs bg-yellow-500/20 text-yellow-400 px-2 py-1 rounded">JavaScript</span>
+                    </div>
+
+                    <div class="editor-body">
+                        <div class="mb-4">
+                            <label class="text-sm text-slate-400 mb-2 block">&#x1F4DD; Votre code :</label>
+                            <textarea id="code-input" class="code-input" placeholder="// &Eacute;crivez votre code JavaScript ici..."></textarea>
+                        </div>
+
+                        <div class="flex gap-3 mb-4">
+                            <button onclick="runCode()" class="run-btn">
+                                &#x25B6; Ex&eacute;cuter
+                            </button>
+                            <button onclick="validateCode()" class="bg-yellow-500/20 hover:bg-yellow-500/30 text-yellow-400 py-2 px-4 rounded-lg font-medium transition-all">
+                                &#x2705; Valider
+                            </button>
+                            <button onclick="clearCode()" class="bg-slate-700 hover:bg-slate-600 text-slate-300 py-2 px-4 rounded-lg font-medium transition-all">
+                                &#x1F5D1; Effacer
+                            </button>
+                        </div>
+
+                        <div>
+                            <label class="text-sm text-slate-400 mb-2 block">&#x1F4BB; Console :</label>
+                            <div id="console-output" class="console-output">
+                                <span class="text-slate-500">// La sortie de votre code s'affichera ici...</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Quick Reference -->
+                <div class="grid grid-cols-2 md:grid-cols-4 gap-2 mt-4">
+                    <div class="bg-slate-800/50 rounded-lg p-3 text-xs">
+                        <div class="text-yellow-400 font-semibold mb-1">let / const</div>
+                        <code class="text-slate-400">let x = 1; const y = 2;</code>
+                    </div>
+                    <div class="bg-slate-800/50 rounded-lg p-3 text-xs">
+                        <div class="text-yellow-400 font-semibold mb-1">typeof</div>
+                        <code class="text-slate-400">typeof x</code>
+                    </div>
+                    <div class="bg-slate-800/50 rounded-lg p-3 text-xs">
+                        <div class="text-yellow-400 font-semibold mb-1">Template</div>
+                        <code class="text-slate-400">`val : ${x}`</code>
+                    </div>
+                    <div class="bg-slate-800/50 rounded-lg p-3 text-xs">
+                        <div class="text-yellow-400 font-semibold mb-1">Conversions</div>
+                        <code class="text-slate-400">Number() String()</code>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- HELP PANEL -->
+    <div class="help-overlay" id="help-overlay" onclick="toggleHelp()"></div>
+    <div class="help-panel" id="help-panel">
+        <div class="help-panel-header">
+            <div class="flex justify-between items-center">
+                <h2 class="text-xl font-bold text-yellow-400">&#x1F4DA; Aide Variables & types</h2>
+                <button onclick="toggleHelp()" class="text-slate-400 hover:text-white text-2xl">&times;</button>
+            </div>
+            <p class="text-slate-400 text-sm mt-1">let / const / typeof / conversions</p>
+        </div>
+
+        <div class="help-panel-body">
+            <!-- Help Tabs -->
+            <div class="help-tabs">
+                <button class="help-tab active" onclick="showHelpTab('letconst')">let / const</button>
+                <button class="help-tab" onclick="showHelpTab('typeof')">typeof</button>
+                <button class="help-tab" onclick="showHelpTab('concat')">Concat&eacute;nation</button>
+                <button class="help-tab" onclick="showHelpTab('template')">Template ${}</button>
+                <button class="help-tab" onclick="showHelpTab('conversions')">Conversions</button>
+            </div>
+
+            <!-- let / const Tab -->
+            <div class="help-tab-content active" id="help-letconst">
+                <div class="help-section">
+                    <div class="help-section-title">&#x1F4E6; D&eacute;clarer une variable</div>
+                    <div class="help-card">
+                        <div class="help-card-title">let : variable modifiable</div>
+                        <div class="help-code"><button class="copy-btn" onclick="copyCode(this)">Copier</button><span class="keyword">let</span> age = 25;
+age = 26; <span class="comment">// autorise</span>
+<span class="function">console.log</span>(age); <span class="comment">// 26</span></div>
+                    </div>
+                    <div class="help-card">
+                        <div class="help-card-title">const : constante (non reaffectable)</div>
+                        <div class="help-code"><button class="copy-btn" onclick="copyCode(this)">Copier</button><span class="keyword">const</span> pi = 3.14;
+<span class="function">console.log</span>(pi); <span class="comment">// 3.14</span></div>
+                    </div>
+                    <div class="help-tip">
+                        &#x1F4A1; Utilisez <code>const</code> par defaut, et <code>let</code> seulement si la valeur doit changer.
+                    </div>
+                </div>
+            </div>
+
+            <!-- typeof Tab -->
+            <div class="help-tab-content" id="help-typeof">
+                <div class="help-section">
+                    <div class="help-section-title">&#x1F50E; Conna&icirc;tre le type</div>
+                    <div class="help-card">
+                        <div class="help-card-title">typeof renvoie le type d'une valeur</div>
+                        <div class="help-code"><button class="copy-btn" onclick="copyCode(this)">Copier</button><span class="function">console.log</span>(<span class="keyword">typeof</span> <span class="string">"Ali"</span>);  <span class="comment">// string</span>
+<span class="function">console.log</span>(<span class="keyword">typeof</span> 18);     <span class="comment">// number</span>
+<span class="function">console.log</span>(<span class="keyword">typeof</span> <span class="keyword">true</span>);   <span class="comment">// boolean</span>
+<span class="function">console.log</span>(<span class="keyword">typeof</span> vide);   <span class="comment">// undefined</span></div>
+                    </div>
+                    <div class="help-tip">
+                        &#x1F4A1; Les principaux types sont : <code>string</code>, <code>number</code>, <code>boolean</code>, <code>undefined</code>.
+                    </div>
+                </div>
+            </div>
+
+            <!-- Concatenation Tab -->
+            <div class="help-tab-content" id="help-concat">
+                <div class="help-section">
+                    <div class="help-section-title">&#x2795; Concat&eacute;nation avec +</div>
+                    <div class="help-card">
+                        <div class="help-card-title">Coller deux textes</div>
+                        <div class="help-code"><button class="copy-btn" onclick="copyCode(this)">Copier</button><span class="keyword">let</span> ville = <span class="string">"Mamoudzou"</span>;
+<span class="function">console.log</span>(<span class="string">"Bonjour "</span> + ville);
+<span class="comment">// Bonjour Mamoudzou</span></div>
+                    </div>
+                    <div class="help-tip">
+                        &#x1F4A1; Attention : <code>"1" + 1</code> donne <code>"11"</code> (texte), pas <code>2</code>.
+                    </div>
+                </div>
+            </div>
+
+            <!-- Template literal Tab -->
+            <div class="help-tab-content" id="help-template">
+                <div class="help-section">
+                    <div class="help-section-title">&#x1F4DD; Template literal `${}`</div>
+                    <div class="help-card">
+                        <div class="help-card-title">Inserer une variable dans un texte</div>
+                        <div class="help-code"><button class="copy-btn" onclick="copyCode(this)">Copier</button><span class="keyword">let</span> x = 5;
+<span class="function">console.log</span>(<span class="string">`valeur : ${x}`</span>);
+<span class="comment">// valeur : 5</span></div>
+                    </div>
+                    <div class="help-tip">
+                        &#x1F4A1; On utilise les accents graves <code>` `</code> (et non les guillemets) et la syntaxe <code>${...}</code>.
+                    </div>
+                </div>
+            </div>
+
+            <!-- Conversions Tab -->
+            <div class="help-tab-content" id="help-conversions">
+                <div class="help-section">
+                    <div class="help-section-title">&#x1F501; Convertir un type</div>
+                    <div class="help-card">
+                        <div class="help-card-title">Number() : texte vers nombre</div>
+                        <div class="help-code"><button class="copy-btn" onclick="copyCode(this)">Copier</button><span class="keyword">let</span> s = <span class="string">"10"</span>;
+<span class="function">console.log</span>(<span class="function">Number</span>(s) + 5); <span class="comment">// 15</span></div>
+                    </div>
+                    <div class="help-card">
+                        <div class="help-card-title">String() : nombre vers texte</div>
+                        <div class="help-code"><button class="copy-btn" onclick="copyCode(this)">Copier</button><span class="keyword">let</span> n = 7;
+<span class="function">console.log</span>(<span class="keyword">typeof</span> <span class="function">String</span>(n)); <span class="comment">// string</span></div>
+                    </div>
+                    <div class="help-tip">
+                        &#x1F4A1; <code>Number()</code> convertit en nombre, <code>String()</code> convertit en texte.
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- FINAL SCORE MODAL -->
+    <div id="modal" class="modal-overlay">
+        <div class="modal-content text-center">
+            <div class="text-5xl mb-4">&#x1F3C6;</div>
+            <h2 class="text-2xl font-bold mb-2">TP Termin&eacute; !</h2>
+
+            <div id="final-grade" class="text-7xl font-bold my-6 grade-A">A</div>
+
+            <div class="text-3xl font-bold mb-6">
+                <span id="final-score" class="text-yellow-400">100</span>
+                <span class="text-slate-400">/100</span>
+            </div>
+
+            <div class="grid grid-cols-2 gap-4 text-sm mb-6">
+                <div class="bg-slate-800 rounded-lg p-3">
+                    <div class="text-slate-400">Temps total</div>
+                    <div id="final-time" class="font-bold text-lg">00:00</div>
+                </div>
+                <div class="bg-slate-800 rounded-lg p-3">
+                    <div class="text-slate-400">Missions r&eacute;ussies</div>
+                    <div id="final-missions" class="font-bold text-lg">0/10</div>
+                </div>
+                <div class="bg-slate-800 rounded-lg p-3">
+                    <div class="text-slate-400">Indices utilis&eacute;s</div>
+                    <div id="final-hints" class="font-bold text-lg">0</div>
+                </div>
+                <div class="bg-slate-800 rounded-lg p-3">
+                    <div class="text-slate-400">Erreurs</div>
+                    <div id="final-errors" class="font-bold text-lg">0</div>
+                </div>
+            </div>
+
+            <div id="score-breakdown" class="text-left text-sm bg-slate-800/50 rounded-lg p-4 mb-6"></div>
+
+            <p id="auto-download-note" class="text-xs text-cyan-400 mb-4">&#x1F4E5; Votre relev&eacute; a &eacute;t&eacute; t&eacute;l&eacute;charg&eacute; automatiquement.</p>
+
+            <div class="flex gap-3 justify-center">
+                <button onclick="restartGame()" class="bg-slate-700 hover:bg-slate-600 text-white py-3 px-6 rounded-lg font-medium transition-all">
+                    &#x1F504; Recommencer
+                </button>
+                <button onclick="downloadResults()" class="bg-gradient-to-r from-yellow-500 to-amber-500 text-slate-900 py-3 px-6 rounded-lg font-medium transition-all hover:shadow-lg">
+                    &#x1F4E5; T&eacute;l&eacute;charger &agrave; nouveau
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // ==================== CONFIGURATION ====================
+        const CONFIG = {
+            baseScore: 100,
+            hintPenalty: 5,
+            skipPenalty: 15,
+            errorPenalty: 1,
+            bonusTimeThreshold: 1800,
+            bonusTimePoints: 10
+        };
+
+        // ==================== MISSIONS DATABASE (VARIABLES & TYPES UNIQUEMENT) ====================
+        const missions = [
+            {
+                id: 1,
+                category: "let",
+                text: "D&eacute;clarez une variable <strong>age</strong> avec <strong>let</strong> et la valeur 25, puis affichez-la avec console.log.",
+                hint: "let age = 25; console.log(age);",
+                expected: "// 25",
+                explication: "let cree une variable modifiable. console.log affiche sa valeur.",
+                validate: (code, output) => /\blet\b/.test(code) && /console\.log/.test(code),
+                validateOutput: (output) => output.includes('25')
+            },
+            {
+                id: 2,
+                category: "const",
+                text: "D&eacute;clarez une constante <strong>pi</strong> avec <strong>const</strong> = 3.14 et affichez-la.",
+                hint: "const pi = 3.14; console.log(pi);",
+                expected: "// 3.14",
+                explication: "const cree une constante qu'on ne peut pas reaffecter.",
+                validate: (code, output) => /\bconst\b/.test(code) && /console\.log/.test(code),
+                validateOutput: (output) => output.includes('3.14')
+            },
+            {
+                id: 3,
+                category: "typeof (texte)",
+                text: "D&eacute;clarez <strong>prenom</strong> = \"Ali\" puis affichez son type avec <strong>typeof</strong>.",
+                hint: "let prenom = 'Ali'; console.log(typeof prenom);",
+                expected: "// string",
+                explication: "typeof donne le type d'une valeur. Un texte entre guillemets est de type 'string'.",
+                validate: (code, output) => /typeof/.test(code),
+                validateOutput: (output) => output.toLowerCase().includes('string')
+            },
+            {
+                id: 4,
+                category: "typeof (nombre)",
+                text: "D&eacute;clarez <strong>note</strong> = 18 et affichez son type avec <strong>typeof</strong>.",
+                hint: "let note = 18; console.log(typeof note);",
+                expected: "// number",
+                explication: "Un nombre est de type 'number'.",
+                validate: (code, output) => /typeof/.test(code),
+                validateOutput: (output) => output.toLowerCase().includes('number')
+            },
+            {
+                id: 5,
+                category: "typeof (bool&eacute;en)",
+                text: "D&eacute;clarez <strong>actif</strong> = true et affichez son type avec <strong>typeof</strong>.",
+                hint: "let actif = true; console.log(typeof actif);",
+                expected: "// boolean",
+                explication: "true ou false sont de type 'boolean'.",
+                validate: (code, output) => /typeof/.test(code),
+                validateOutput: (output) => output.toLowerCase().includes('boolean')
+            },
+            {
+                id: 6,
+                category: "Concat&eacute;nation",
+                text: "D&eacute;clarez <strong>ville</strong> = \"Mamoudzou\" et affichez \"Bonjour \" + ville.",
+                hint: "let ville = 'Mamoudzou'; console.log('Bonjour ' + ville);",
+                expected: "// Bonjour Mamoudzou",
+                explication: "Le + entre deux textes les colle (concatenation).",
+                validate: (code, output) => /\+/.test(code) && /console\.log/.test(code),
+                validateOutput: (output) => output.toLowerCase().includes('mamoudzou')
+            },
+            {
+                id: 7,
+                category: "Template `${}`",
+                text: "D&eacute;clarez <strong>x</strong> = 5 et affichez `valeur : ${x}` avec un template literal (accents graves ` `).",
+                hint: "let x = 5; console.log(`valeur : ${x}`);",
+                expected: "// valeur : 5",
+                explication: "Les accents graves permettent d'inserer une variable avec ${...}.",
+                validate: (code, output) => /`/.test(code) && /\$\{/.test(code),
+                validateOutput: (output) => output.includes('5')
+            },
+            {
+                id: 8,
+                category: "Number()",
+                text: "D&eacute;clarez <strong>s</strong> = \"10\" (un texte) et affichez <strong>Number(s) + 5</strong>.",
+                hint: "let s = '10'; console.log(Number(s) + 5);",
+                expected: "// 15",
+                explication: "Number() convertit un texte en nombre, donc l'addition fait bien 15 (et non '105').",
+                validate: (code, output) => /Number\s*\(/.test(code),
+                validateOutput: (output) => output.includes('15')
+            },
+            {
+                id: 9,
+                category: "String()",
+                text: "D&eacute;clarez <strong>n</strong> = 7 et affichez le type de <strong>String(n)</strong> avec typeof.",
+                hint: "let n = 7; console.log(typeof String(n));",
+                expected: "// string",
+                explication: "String() convertit un nombre en texte ; son type devient 'string'.",
+                validate: (code, output) => /String\s*\(/.test(code) && /typeof/.test(code),
+                validateOutput: (output) => output.toLowerCase().includes('string')
+            },
+            {
+                id: 10,
+                category: "undefined",
+                text: "D&eacute;clarez une variable <strong>vide</strong> sans lui donner de valeur, puis affichez son type avec typeof.",
+                hint: "let vide; console.log(typeof vide);",
+                expected: "// undefined",
+                explication: "Une variable declaree sans valeur vaut undefined.",
+                validate: (code, output) => /typeof/.test(code),
+                validateOutput: (output) => output.toLowerCase().includes('undefined')
+            }
+        ];
+
+        // ==================== GAME STATE ====================
+        let currentMission = 0;
+        let score = CONFIG.baseScore;
+        let hintsUsed = 0;
+        let skipsUsed = 0;
+        let errorsCount = 0;
+        let missionsPassed = 0;
+        let startTime = null;
+        let timerInterval = null;
+        let studentName = '';
+        let studentGroup = '';
+        let consoleOutput = [];
+        let finalElapsed = 0;
+        let missionLog = [];
+
+        // ==================== SAUVEGARDE AUTOMATIQUE (localStorage) ====================
+        const STORAGE_KEY = 'variables-challenge-save';
+
+        // Enregistre l'etat de la partie dans le navigateur
+        function saveState() {
+            if (!studentName) return; // pas de partie en cours
+            const elapsed = startTime ? Math.floor((Date.now() - startTime) / 1000) : 0;
+            const state = {
+                currentMission,
+                score,
+                hintsUsed,
+                skipsUsed,
+                errorsCount,
+                missionsPassed,
+                studentName,
+                studentGroup,
+                missionLog,
+                elapsed,
+                hintShownIds: missions.filter(m => m.hintShown).map(m => m.id)
+            };
+            try {
+                localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+            } catch (e) {
+                // localStorage indisponible (mode prive, quota...) : on ignore
+            }
+        }
+
+        // Efface la sauvegarde (fin de TP ou recommencer)
+        function clearState() {
+            try { localStorage.removeItem(STORAGE_KEY); } catch (e) {}
+        }
+
+        // Reprend une partie sauvegardee. Retourne true si une partie a ete restauree.
+        function loadState() {
+            let raw = null;
+            try { raw = localStorage.getItem(STORAGE_KEY); } catch (e) { return false; }
+            if (!raw) return false;
+            let state;
+            try { state = JSON.parse(raw); } catch (e) { clearState(); return false; }
+            // Partie terminee ou corrompue : on ne restaure pas
+            if (!state || typeof state.currentMission !== 'number' || state.currentMission >= missions.length) {
+                clearState();
+                return false;
+            }
+
+            currentMission = state.currentMission;
+            score = typeof state.score === 'number' ? state.score : CONFIG.baseScore;
+            hintsUsed = state.hintsUsed || 0;
+            skipsUsed = state.skipsUsed || 0;
+            errorsCount = state.errorsCount || 0;
+            missionsPassed = state.missionsPassed || 0;
+            studentName = state.studentName || '';
+            studentGroup = state.studentGroup || '';
+            missionLog = Array.isArray(state.missionLog) && state.missionLog.length === missions.length
+                ? state.missionLog
+                : missions.map(() => ({ status: 'non-traitee', code: '' }));
+
+            // Restaure les indices deja consultes (pour ne pas re-penaliser)
+            (state.hintShownIds || []).forEach(id => {
+                const m = missions.find(x => x.id === id);
+                if (m) m.hintShown = true;
+            });
+
+            // On bascule directement sur l'ecran de jeu, a la mission en cours
+            document.getElementById('login-screen').classList.add('hidden');
+            document.getElementById('game-screen').classList.remove('hidden');
+            document.getElementById('student-display').textContent = `${studentName} (${studentGroup})`;
+
+            // Le chrono reprend la ou il en etait (le temps page fermee n'est pas compte)
+            startTime = Date.now() - (state.elapsed || 0) * 1000;
+            timerInterval = setInterval(updateTimer, 1000);
+
+            displayMission(currentMission);
+            return true;
+        }
+
+        // ==================== HELP PANEL ====================
+        function toggleHelp() {
+            document.getElementById('help-panel').classList.toggle('active');
+            document.getElementById('help-overlay').classList.toggle('active');
+        }
+
+        function showHelpTab(tabName) {
+            document.querySelectorAll('.help-tab').forEach(t => t.classList.remove('active'));
+            document.querySelectorAll('.help-tab-content').forEach(c => c.classList.remove('active'));
+            document.querySelector(`.help-tab[onclick="showHelpTab('${tabName}')"]`).classList.add('active');
+            document.getElementById(`help-${tabName}`).classList.add('active');
+        }
+
+        function copyCode(btn) {
+            const codeBlock = btn.parentElement;
+            const code = codeBlock.textContent.replace('Copier', '').trim();
+            navigator.clipboard.writeText(code).then(() => {
+                btn.textContent = 'Copié!';
+                setTimeout(() => btn.textContent = 'Copier', 2000);
+            });
+        }
+
+        // ==================== INITIALIZATION ====================
+        document.getElementById('login-form').addEventListener('submit', function(e) {
+            e.preventDefault();
+            studentName = document.getElementById('student-name').value.trim();
+            studentGroup = document.getElementById('student-group').value.trim();
+            if (studentName && studentGroup) {
+                startGame();
+            }
+        });
+
+        function startGame() {
+            document.getElementById('login-screen').classList.add('hidden');
+            document.getElementById('game-screen').classList.remove('hidden');
+            document.getElementById('student-display').textContent = `${studentName} (${studentGroup})`;
+            startTime = Date.now();
+            timerInterval = setInterval(updateTimer, 1000);
+            missionLog = missions.map(() => ({ status: 'non-traitee', code: '' }));
+            displayMission(0);
+            saveState();
+        }
+
+        function updateTimer() {
+            const elapsed = Math.floor((Date.now() - startTime) / 1000);
+            const minutes = Math.floor(elapsed / 60).toString().padStart(2, '0');
+            const seconds = (elapsed % 60).toString().padStart(2, '0');
+            document.getElementById('timer').textContent = `${minutes}:${seconds}`;
+        }
+
+        // ==================== MISSION DISPLAY ====================
+        function displayMission(index) {
+            const mission = missions[index];
+            document.getElementById('mission-number').textContent = index + 1;
+            document.getElementById('mission-category').textContent = mission.category;
+            document.getElementById('mission-desc').innerHTML = mission.text;
+            document.getElementById('expected-text').textContent = mission.expected;
+            document.getElementById('hint-text').innerHTML = mission.hint;
+            document.getElementById('mission-hint').classList.add('hidden');
+            updateProgress();
+            updateScore();
+        }
+
+        function updateProgress() {
+            const progress = ((currentMission) / missions.length) * 100;
+            document.getElementById('progress-bar').style.width = progress + '%';
+            document.getElementById('progress-text').textContent = `${currentMission} / ${missions.length}`;
+        }
+
+        function updateScore() {
+            document.getElementById('score').textContent = Math.max(0, score);
+            document.getElementById('hints-used').textContent = hintsUsed;
+            document.getElementById('skips-used').textContent = skipsUsed;
+            document.getElementById('errors-count').textContent = errorsCount;
+        }
+
+        // ==================== CODE EXECUTION ====================
+        function runCode() {
+            const code = document.getElementById('code-input').value;
+            const outputDiv = document.getElementById('console-output');
+            consoleOutput = [];
+
+            const originalLog = console.log;
+            console.log = function(...args) {
+                consoleOutput.push(args.map(a => {
+                    if (typeof a === 'object') return JSON.stringify(a);
+                    return String(a);
+                }).join(' '));
+            };
+
+            try {
+                eval(code);
+                outputDiv.innerHTML = consoleOutput.length > 0
+                    ? consoleOutput.map(o => `<div class="text-green-400">&gt; ${o}</div>`).join('')
+                    : '<span class="text-slate-500">// Aucune sortie</span>';
+            } catch (error) {
+                outputDiv.innerHTML = `<div class="text-red-400">Erreur: ${error.message}</div>`;
+                consoleOutput = ['ERROR: ' + error.message];
+            }
+
+            console.log = originalLog;
+        }
+
+        function validateCode() {
+            const code = document.getElementById('code-input').value;
+            const mission = missions[currentMission];
+
+            runCode();
+
+            const output = consoleOutput.join('\n');
+
+            if (mission.validate(code, output) && mission.validateOutput(output)) {
+                displaySuccess();
+                missionsPassed++;
+                missionLog[currentMission] = { status: 'reussie', code: code };
+                saveState();
+                setTimeout(() => nextMission(), 1500);
+            } else {
+                displayError();
+                errorsCount++;
+                score -= CONFIG.errorPenalty;
+                updateScore();
+                saveState();
+            }
+        }
+
+        function displaySuccess() {
+            const outputDiv = document.getElementById('console-output');
+            outputDiv.innerHTML += '<div class="text-green-400 font-bold mt-2 pt-2 border-t border-green-500/30">&#x2705; Mission r&eacute;ussie !</div>';
+        }
+
+        function displayError() {
+            const outputDiv = document.getElementById('console-output');
+            outputDiv.innerHTML += '<div class="text-red-400 font-bold mt-2 pt-2 border-t border-red-500/30">&#x274C; Ce n\'est pas tout &agrave; fait &ccedil;a, r&eacute;essayez !</div>';
+        }
+
+        function clearCode() {
+            document.getElementById('code-input').value = '';
+            document.getElementById('console-output').innerHTML = '<span class="text-slate-500">// La sortie de votre code s\'affichera ici...</span>';
+        }
+
+        // ==================== HINTS & SKIP ====================
+        function toggleHint() {
+            const hintDiv = document.getElementById('mission-hint');
+            if (hintDiv.classList.contains('hidden')) {
+                hintDiv.classList.remove('hidden');
+                if (!missions[currentMission].hintShown) {
+                    missions[currentMission].hintShown = true;
+                    hintsUsed++;
+                    score -= CONFIG.hintPenalty;
+                    updateScore();
+                    saveState();
+                }
+            }
+        }
+
+        function skipMission() {
+            skipsUsed++;
+            score -= CONFIG.skipPenalty;
+            updateScore();
+            missionLog[currentMission] = { status: 'passee', code: document.getElementById('code-input').value };
+            saveState();
+            nextMission();
+        }
+
+        function nextMission() {
+            currentMission++;
+            clearCode();
+            if (currentMission >= missions.length) {
+                finishGame();
+            } else {
+                displayMission(currentMission);
+                saveState();
+            }
+        }
+
+        // ==================== GAME END ====================
+        function finishGame() {
+            clearInterval(timerInterval);
+            clearState(); // TP termine : plus rien a restaurer
+
+            const elapsed = Math.floor((Date.now() - startTime) / 1000);
+            finalElapsed = elapsed;
+            if (elapsed < CONFIG.bonusTimeThreshold) {
+                score += CONFIG.bonusTimePoints;
+            }
+
+            score = Math.max(0, Math.min(110, score));
+
+            const grade = calculateGrade(score);
+            showFinalScore(score, grade, elapsed, missionsPassed);
+
+            // Telechargement automatique du releve a la fin du TP
+            setTimeout(() => downloadResults(), 800);
+        }
+
+        function calculateGrade(score) {
+            if (score >= 90) return 'A';
+            if (score >= 80) return 'B';
+            if (score >= 70) return 'C';
+            if (score >= 60) return 'D';
+            return 'F';
+        }
+
+        function showFinalScore(finalScore, grade, time, missionsCount) {
+            document.getElementById('final-score').textContent = finalScore;
+            document.getElementById('final-grade').textContent = grade;
+            document.getElementById('final-grade').className = `text-7xl font-bold my-6 grade-${grade}`;
+
+            const minutes = Math.floor(time / 60).toString().padStart(2, '0');
+            const seconds = (time % 60).toString().padStart(2, '0');
+            document.getElementById('final-time').textContent = `${minutes}:${seconds}`;
+            document.getElementById('final-missions').textContent = `${missionsCount}/${missions.length}`;
+            document.getElementById('final-hints').textContent = hintsUsed;
+            document.getElementById('final-errors').textContent = errorsCount;
+
+            let breakdown = `<div class="space-y-1">
+                <div class="flex justify-between"><span>Score de base</span><span class="text-green-400">+100</span></div>`;
+            if (hintsUsed > 0) breakdown += `<div class="flex justify-between"><span>Indices utilis&eacute;s (${hintsUsed})</span><span class="text-red-400">-${hintsUsed * CONFIG.hintPenalty}</span></div>`;
+            if (skipsUsed > 0) breakdown += `<div class="flex justify-between"><span>Missions pass&eacute;es (${skipsUsed})</span><span class="text-red-400">-${skipsUsed * CONFIG.skipPenalty}</span></div>`;
+            if (errorsCount > 0) breakdown += `<div class="flex justify-between"><span>Erreurs (${errorsCount})</span><span class="text-red-400">-${errorsCount * CONFIG.errorPenalty}</span></div>`;
+            if (time < CONFIG.bonusTimeThreshold) breakdown += `<div class="flex justify-between"><span>Bonus temps</span><span class="text-green-400">+${CONFIG.bonusTimePoints}</span></div>`;
+            breakdown += `</div>`;
+
+            document.getElementById('score-breakdown').innerHTML = breakdown;
+            document.getElementById('modal').classList.add('active');
+        }
+
+        function restartGame() {
+            clearState();
+            location.reload();
+        }
+
+        // Convertit un texte HTML (avec entites et balises) en texte brut
+        function stripHtml(html) {
+            const d = document.createElement('div');
+            d.innerHTML = html;
+            return (d.textContent || d.innerText || '').replace(/\s+/g, ' ').trim();
+        }
+
+        function noteSur20() {
+            return Math.min(20, Math.round((score / 100) * 20 * 10) / 10);
+        }
+
+        function mentionFromNote20(n) {
+            if (n >= 16) return 'Tres bien';
+            if (n >= 14) return 'Bien';
+            if (n >= 12) return 'Assez bien';
+            if (n >= 10) return 'Passable';
+            return 'Insuffisant';
+        }
+
+        // ==================== GENERATION DU PDF (Attestation Sirel976) ====================
+        function downloadResults() {
+            if (!window.jspdf || !window.jspdf.jsPDF) {
+                alert("La librairie PDF n'a pas pu etre chargee (verifiez votre connexion internet).");
+                return;
+            }
+            const { jsPDF } = window.jspdf;
+            const doc = new jsPDF({ unit: 'pt', format: 'a4' });
+            const pageW = doc.internal.pageSize.getWidth();
+            const pageH = doc.internal.pageSize.getHeight();
+            const margin = 48;
+            const contentW = pageW - margin * 2;
+            let y = 0;
+            let page = 1;
+
+            const navy = [15, 34, 58];
+            const red = [200, 40, 50];
+            const green = [22, 150, 80];
+            const muted = [120, 120, 120];
+
+            function footer() {
+                doc.setFont('helvetica', 'normal');
+                doc.setFontSize(8);
+                doc.setTextColor(150);
+                doc.text('Sirel976 - Mamoudzou, Mayotte (976)', margin, pageH - 24);
+            }
+
+            function newPage() {
+                footer();
+                doc.addPage();
+                page++;
+                y = margin;
+            }
+            function ensure(space) {
+                if (y + space > pageH - 48) newPage();
+            }
+            function writeWrapped(text, opts) {
+                opts = opts || {};
+                const font = opts.font || 'helvetica';
+                const style = opts.style || 'normal';
+                const size = opts.size || 10;
+                const color = opts.color || [40, 40, 40];
+                const indent = opts.indent || 0;
+                doc.setFont(font, style);
+                doc.setFontSize(size);
+                doc.setTextColor(color[0], color[1], color[2]);
+                const lines = doc.splitTextToSize(text, contentW - indent);
+                const lh = size + 3;
+                lines.forEach(line => {
+                    ensure(lh);
+                    doc.text(line, margin + indent, y);
+                    y += lh;
+                });
+            }
+
+            // ---------- BANDEAU ----------
+            doc.setFillColor(navy[0], navy[1], navy[2]);
+            doc.rect(0, 0, pageW, 92, 'F');
+            doc.setTextColor(255);
+            doc.setFont('helvetica', 'bold');
+            doc.setFontSize(20);
+            doc.text('Sirel976 - Formation JavaScript', margin, 44);
+            doc.setFont('helvetica', 'normal');
+            doc.setFontSize(11);
+            doc.setTextColor(200, 212, 228);
+            doc.text('TP Variables : let / const / types', margin, 68);
+            y = 122;
+
+            // ---------- ATTESTATION ----------
+            doc.setFont('helvetica', 'bold');
+            doc.setFontSize(14);
+            doc.setTextColor(navy[0], navy[1], navy[2]);
+            doc.text('Attestation de resultat', margin, y);
+            y += 22;
+            doc.setFont('helvetica', 'normal');
+            doc.setFontSize(11);
+            doc.setTextColor(40);
+            const elapsed = finalElapsed || Math.floor((Date.now() - startTime) / 1000);
+            const tmin = Math.floor(elapsed / 60).toString().padStart(2, '0');
+            const tsec = (elapsed % 60).toString().padStart(2, '0');
+            doc.text('Etudiant : ' + studentName, margin, y); y += 16;
+            doc.text('Groupe : ' + studentGroup, margin, y); y += 16;
+            doc.text('Date : ' + new Date().toLocaleString('fr-FR'), margin, y); y += 16;
+            doc.text('Temps total : ' + tmin + ':' + tsec, margin, y); y += 16;
+            doc.text('Indices utilises : ' + hintsUsed + ' / ' + missions.length, margin, y); y += 24;
+
+            // ---------- BLOC NOTE ----------
+            const n20 = noteSur20();
+            const mention = mentionFromNote20(n20);
+            const boxH = 66;
+            doc.setFillColor(red[0], red[1], red[2]);
+            doc.roundedRect(margin, y, contentW, boxH, 8, 8, 'F');
+            doc.setTextColor(255);
+            doc.setFont('helvetica', 'bold');
+            doc.setFontSize(20);
+            doc.text('Note : ' + n20 + ' / 20', margin + 18, y + 30);
+            doc.setFontSize(12);
+            doc.text('Mention : ' + mention, margin + 18, y + 52);
+            doc.setFont('helvetica', 'normal');
+            doc.setFontSize(11);
+            doc.text(missionsPassed + ' / ' + missions.length + ' missions reussies', pageW - margin - 18, y + 40, { align: 'right' });
+            y += boxH + 26;
+
+            // ---------- SCORE PAR CATEGORIE ----------
+            const catGroups = [
+                { label: 'Declaration (let / const)', ids: [1, 2, 3] },
+                { label: 'Types (typeof)', ids: [4, 5, 6] },
+                { label: 'Concatenation & litteraux', ids: [7, 8] },
+                { label: 'Conversions', ids: [9, 10] }
+            ];
+            doc.setFont('helvetica', 'bold');
+            doc.setFontSize(13);
+            doc.setTextColor(navy[0], navy[1], navy[2]);
+            doc.text('Score par categorie', margin, y);
+            y += 20;
+            doc.setFont('helvetica', 'normal');
+            doc.setFontSize(11);
+            doc.setTextColor(40);
+            catGroups.forEach(g => {
+                const ok = missions.filter((m, i) => g.ids.includes(m.id) && missionLog[i] && missionLog[i].status === 'reussie').length;
+                doc.text('-  ' + g.label + ' : ' + ok + ' / ' + g.ids.length, margin + 6, y);
+                y += 16;
+            });
+            y += 14;
+
+            // ---------- CORRIGE DETAILLE ----------
+            ensure(30);
+            doc.setFont('helvetica', 'bold');
+            doc.setFontSize(13);
+            doc.setTextColor(navy[0], navy[1], navy[2]);
+            doc.text('Corrige detaille', margin, y);
+            y += 22;
+
+            missions.forEach((m, i) => {
+                const log = missionLog[i] || { status: 'non-traitee', code: '' };
+                ensure(40);
+                writeWrapped((i + 1) + '. [' + stripHtml(m.category) + '] ' + stripHtml(m.text), { style: 'bold', size: 11, color: navy });
+                y += 2;
+
+                if (log.status === 'reussie') {
+                    writeWrapped('[OK] Mission reussie', { size: 10, color: green });
+                } else if (log.status === 'passee') {
+                    writeWrapped('[X] Mission passee (non realisee)', { size: 10, color: red });
+                } else {
+                    writeWrapped('[X] Mission non traitee', { size: 10, color: red });
+                }
+
+                if (m.hintShown) {
+                    writeWrapped('[!] Indice utilise pour cette mission', { size: 9, style: 'italic', color: [202, 138, 4] });
+                }
+
+                if (log.code && log.code.trim()) {
+                    writeWrapped('Votre code :', { size: 9, style: 'italic', color: muted });
+                    log.code.trim().split('\n').forEach(cl => {
+                        writeWrapped(cl, { font: 'courier', size: 9, color: [70, 70, 70], indent: 12 });
+                    });
+                }
+
+                writeWrapped('Solution attendue :', { size: 9, style: 'italic', color: muted });
+                writeWrapped(m.hint, { font: 'courier', size: 9, color: [20, 110, 60], indent: 12 });
+
+                if (m.explication) {
+                    writeWrapped('>> ' + m.explication, { size: 9, style: 'italic', color: muted });
+                }
+                y += 12;
+            });
+
+            footer();
+
+            // Ajoute "Page x / total" sur chaque page (a droite)
+            const total = doc.internal.getNumberOfPages();
+            for (let p = 1; p <= total; p++) {
+                doc.setPage(p);
+                doc.setFont('helvetica', 'normal');
+                doc.setFontSize(8);
+                doc.setTextColor(150);
+                doc.text('Page ' + p + ' / ' + total, pageW - margin, pageH - 24, { align: 'right' });
+            }
+
+            const fileName = 'Attestation-Variables-' + studentName.replace(/\s+/g, '_') + '-' + new Date().toISOString().split('T')[0] + '.pdf';
+            doc.save(fileName);
+        }
+
+        // Reprise automatique d'une partie en cours au chargement de la page
+        loadState();
+
+        // Sauvegarde de securite avant un rechargement / une fermeture (chrono a jour)
+        window.addEventListener('beforeunload', saveState);
+
+        // Keyboard shortcuts
+        document.addEventListener('keydown', function(e) {
+            if (e.key === 'Escape') {
+                if (document.getElementById('help-panel').classList.contains('active')) {
+                    toggleHelp();
+                }
+            }
+            if (e.key === 'F1') {
+                e.preventDefault();
+                toggleHelp();
+            }
+        });
+    </script>
+</body>
+</html>
