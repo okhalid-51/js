@@ -1,0 +1,379 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Bac à sable HTML / CSS / JS | EXPERNET</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;700&family=Space+Grotesk:wght@400;600;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg-darkest: #0a0f1a;
+            --bg-dark: #0f172a;
+            --bg-panel: #1e293b;
+            --accent-js: #F7DF1E;
+            --accent-blue: #3b82f6;
+            --accent-cyan: #06b6d4;
+            --accent-green: #22c55e;
+            --accent-yellow: #fbbf24;
+            --accent-red: #ef4444;
+            --accent-purple: #a855f7;
+            --accent-html: #e44d26;
+            --accent-css: #2965f1;
+            --text-main: #e2e8f0;
+            --text-muted: #94a3b8;
+        }
+
+        * { box-sizing: border-box; }
+
+        html, body { height: 100%; }
+
+        body {
+            font-family: 'Space Grotesk', sans-serif;
+            background: var(--bg-darkest);
+            color: var(--text-main);
+            margin: 0;
+            overflow: hidden;
+        }
+
+        .font-mono { font-family: 'JetBrains Mono', monospace; }
+
+        .cyber-grid {
+            position: fixed;
+            inset: 0;
+            background-image:
+                linear-gradient(rgba(247, 223, 30, 0.03) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(247, 223, 30, 0.03) 1px, transparent 1px);
+            background-size: 50px 50px;
+            pointer-events: none;
+            z-index: 0;
+        }
+
+        .app {
+            position: relative;
+            z-index: 1;
+            display: flex;
+            flex-direction: column;
+            height: 100vh;
+            padding: 14px;
+            gap: 14px;
+        }
+
+        /* ---------- TOP BAR ---------- */
+        .topbar {
+            display: flex;
+            flex-wrap: wrap;
+            align-items: center;
+            justify-content: space-between;
+            gap: 12px;
+        }
+        .brand { display: flex; align-items: center; gap: 12px; }
+        .brand-title {
+            font-size: 18px;
+            font-weight: 700;
+            background: linear-gradient(to right, var(--accent-js), #eab308);
+            -webkit-background-clip: text;
+            background-clip: text;
+            -webkit-text-fill-color: transparent;
+            line-height: 1.1;
+        }
+        .brand-sub { font-size: 11px; color: var(--text-muted); }
+
+        .controls { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; }
+
+        /* Segmented mode switch */
+        .mode-switch {
+            display: inline-flex;
+            background: var(--bg-panel);
+            border: 1px solid rgba(247, 223, 30, 0.25);
+            border-radius: 10px;
+            padding: 4px;
+            gap: 4px;
+        }
+        .mode-btn {
+            border: none;
+            background: transparent;
+            color: var(--text-muted);
+            font-weight: 600;
+            font-size: 13px;
+            padding: 7px 16px;
+            border-radius: 7px;
+            cursor: pointer;
+            transition: all 0.2s;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+        .mode-btn:hover { color: var(--text-main); }
+        .mode-btn.active {
+            background: linear-gradient(135deg, var(--accent-js), #eab308);
+            color: #1e293b;
+            box-shadow: 0 4px 14px -4px rgba(247, 223, 30, 0.5);
+        }
+
+        .select-styled {
+            background: var(--bg-panel);
+            border: 1px solid rgba(247, 223, 30, 0.25);
+            color: var(--text-main);
+            border-radius: 8px;
+            padding: 8px 12px;
+            font-size: 13px;
+            font-family: inherit;
+            cursor: pointer;
+        }
+        .select-styled:focus { outline: none; border-color: var(--accent-js); }
+
+        .btn {
+            border: none;
+            border-radius: 8px;
+            padding: 8px 16px;
+            font-weight: 600;
+            font-size: 13px;
+            cursor: pointer;
+            transition: all 0.2s;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+        }
+        .btn-run {
+            background: linear-gradient(135deg, var(--accent-green), #16a34a);
+            color: white;
+        }
+        .btn-run:hover { transform: translateY(-1px); box-shadow: 0 6px 18px -6px rgba(34,197,94,0.6); }
+        .btn-ghost {
+            background: rgba(148, 163, 184, 0.12);
+            color: var(--text-muted);
+            border: 1px solid rgba(148, 163, 184, 0.2);
+        }
+        .btn-ghost:hover { color: var(--text-main); background: rgba(148, 163, 184, 0.2); }
+
+        .toggle-auto {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            font-size: 12px;
+            color: var(--text-muted);
+            cursor: pointer;
+            user-select: none;
+        }
+        .toggle-auto input { accent-color: var(--accent-js); width: 15px; height: 15px; }
+
+        /* ---------- WORKSPACE ---------- */
+        .workspace {
+            flex: 1;
+            display: flex;
+            gap: 14px;
+            min-height: 0;
+        }
+        .pane {
+            background: var(--bg-panel);
+            border: 1px solid rgba(247, 223, 30, 0.15);
+            border-radius: 12px;
+            display: flex;
+            flex-direction: column;
+            min-height: 0;
+            min-width: 0;
+            overflow: hidden;
+        }
+        .pane-editor { flex: 1; }
+        .pane-output { flex: 1.05; }
+
+        .pane-head {
+            display: flex;
+            align-items: center;
+            gap: 4px;
+            padding: 8px 10px;
+            background: linear-gradient(135deg, var(--bg-darkest), var(--bg-dark));
+            border-bottom: 1px solid rgba(247, 223, 30, 0.12);
+        }
+
+        /* editor tabs */
+        .tab {
+            border: none;
+            background: transparent;
+            color: var(--text-muted);
+            font-weight: 600;
+            font-size: 12px;
+            font-family: 'JetBrains Mono', monospace;
+            padding: 6px 12px;
+            border-radius: 7px;
+            cursor: pointer;
+            transition: all 0.15s;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+        .tab:hover { color: var(--text-main); background: rgba(255,255,255,0.04); }
+        .tab .dot { width: 9px; height: 9px; border-radius: 50%; }
+        .dot-html { background: var(--accent-html); }
+        .dot-css { background: var(--accent-css); }
+        .dot-js { background: var(--accent-js); }
+        .tab.active { background: rgba(255,255,255,0.07); color: var(--text-main); }
+        .tab.active.tab-html { box-shadow: inset 0 -2px 0 var(--accent-html); }
+        .tab.active.tab-css { box-shadow: inset 0 -2px 0 var(--accent-css); }
+        .tab.active.tab-js { box-shadow: inset 0 -2px 0 var(--accent-js); }
+
+        .editor-stack { position: relative; flex: 1; min-height: 0; }
+        .code-area {
+            position: absolute;
+            inset: 0;
+            width: 100%;
+            height: 100%;
+            background: #0b1120;
+            color: var(--text-main);
+            border: none;
+            padding: 14px 16px;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 13.5px;
+            line-height: 1.6;
+            resize: none;
+            tab-size: 2;
+        }
+        .code-area:focus { outline: none; }
+        .code-area::placeholder { color: #475569; }
+        .hidden-pane { display: none !important; }
+
+        /* output tabs */
+        .out-tabs { display: flex; align-items: center; gap: 4px; flex: 1; }
+        .out-tab {
+            border: none;
+            background: transparent;
+            color: var(--text-muted);
+            font-weight: 600;
+            font-size: 12px;
+            padding: 6px 12px;
+            border-radius: 7px;
+            cursor: pointer;
+            transition: all 0.15s;
+        }
+        .out-tab:hover { color: var(--text-main); }
+        .out-tab.active { background: rgba(247,223,30,0.15); color: var(--accent-js); }
+
+        .out-body { position: relative; flex: 1; min-height: 0; }
+        .preview-frame {
+            position: absolute;
+            inset: 0;
+            width: 100%;
+            height: 100%;
+            border: none;
+            background: white;
+        }
+        .console-box {
+            position: absolute;
+            inset: 0;
+            background: #0b1120;
+            overflow-y: auto;
+            padding: 12px 14px;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 13px;
+            line-height: 1.55;
+        }
+        .c-line { white-space: pre-wrap; word-break: break-word; padding: 1px 0; }
+        .c-log { color: #a7f3d0; }
+        .c-info { color: #67e8f9; }
+        .c-warn { color: var(--accent-yellow); }
+        .c-error { color: #fca5a5; }
+        .c-empty { color: #475569; font-style: italic; }
+        .c-line .badge {
+            display: inline-block;
+            font-size: 10px;
+            opacity: 0.6;
+            margin-right: 8px;
+            min-width: 38px;
+        }
+
+        .footer-note {
+            font-size: 10px;
+            color: #475569;
+            text-align: center;
+        }
+
+        /* scrollbars */
+        ::-webkit-scrollbar { width: 8px; height: 8px; }
+        ::-webkit-scrollbar-track { background: transparent; }
+        ::-webkit-scrollbar-thumb { background: rgba(247, 223, 30, 0.4); border-radius: 4px; }
+
+        @media (max-width: 900px) {
+            body { overflow: auto; }
+            .app { height: auto; min-height: 100vh; }
+            .workspace { flex-direction: column; }
+            .pane { min-height: 320px; }
+        }
+    </style>
+</head>
+<body>
+    <div class="cyber-grid"></div>
+
+    <div class="app">
+        <!-- ============ TOP BAR ============ -->
+        <div class="topbar">
+            <div class="brand">
+                <span style="font-size:28px;">&#x1F9EA;</span>
+                <div>
+                    <div class="brand-title">Bac &agrave; sable &mdash; HTML / CSS / JS</div>
+                    <div class="brand-sub">EXPERNET &times; Sirel976 &middot; D&eacute;mo &eacute;v&eacute;nements et code en direct</div>
+                </div>
+            </div>
+
+            <div class="controls">
+                <div class="mode-switch">
+                    <button id="mode-web" class="mode-btn active" onclick="switchMode('web')">&#x1F310; Web</button>
+                    <button id="mode-console" class="mode-btn" onclick="switchMode('console')">&#x1F4BB; Console</button>
+                </div>
+
+                <select id="examples" class="select-styled" onchange="loadExample(this.value)">
+                    <!-- rempli dynamiquement -->
+                </select>
+
+                <label class="toggle-auto">
+                    <input type="checkbox" id="auto-run" checked onchange="onAutoToggle()">
+                    Live
+                </label>
+
+                <button class="btn btn-run" onclick="run()">&#x25B6; Ex&eacute;cuter</button>
+                <button class="btn btn-ghost" onclick="resetAll()">&#x1F5D1; R&eacute;initialiser</button>
+            </div>
+        </div>
+
+        <!-- ============ WORKSPACE ============ -->
+        <div class="workspace">
+            <!-- EDITOR PANE -->
+            <div class="pane pane-editor">
+                <!-- tabs (web mode) -->
+                <div class="pane-head" id="editor-tabs">
+                    <button class="tab tab-html active" data-tab="html" onclick="switchEditorTab('html')"><span class="dot dot-html"></span>HTML</button>
+                    <button class="tab tab-css" data-tab="css" onclick="switchEditorTab('css')"><span class="dot dot-css"></span>CSS</button>
+                    <button class="tab tab-js" data-tab="js" onclick="switchEditorTab('js')"><span class="dot dot-js"></span>JS</button>
+                </div>
+
+                <div class="editor-stack">
+                    <textarea id="ed-html" class="code-area" spellcheck="false" placeholder="<!-- Votre HTML ici -->"></textarea>
+                    <textarea id="ed-css" class="code-area hidden-pane" spellcheck="false" placeholder="/* Votre CSS ici */"></textarea>
+                    <textarea id="ed-js" class="code-area hidden-pane" spellcheck="false" placeholder="// Votre JavaScript ici"></textarea>
+                    <textarea id="ed-console-js" class="code-area hidden-pane" spellcheck="false" placeholder="// JavaScript : utilisez console.log(...) pour afficher"></textarea>
+                </div>
+            </div>
+
+            <!-- OUTPUT PANE -->
+            <div class="pane pane-output">
+                <div class="pane-head">
+                    <div class="out-tabs">
+                        <button id="out-preview-tab" class="out-tab active" onclick="switchOutTab('preview')">&#x1F441; Aper&ccedil;u</button>
+                        <button id="out-console-tab" class="out-tab" onclick="switchOutTab('console')">&#x1F4DF; Console</button>
+                    </div>
+                    <button class="btn btn-ghost" style="padding:4px 10px;font-size:11px;" onclick="clearConsole(true)">Vider la console</button>
+                </div>
+
+                <div class="out-body">
+                    <iframe id="preview" class="preview-frame" sandbox="allow-scripts allow-modals allow-forms"></iframe>
+                    <div id="console-box" class="console-box hidden-pane"></div>
+                </div>
+            </div>
+        </div>
+
+        <div class="footer-note">Sirel976 &middot; Mamoudzou, Mayotte (976) &mdash; Le code s'ex&eacute;cute dans un cadre isol&eacute; (iframe sandbox).</div>
+    </div>
+
+    <script src="bac-a-sable.js" defer></script>
+</body>
+</html>
