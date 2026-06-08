@@ -439,6 +439,9 @@
         .help-code .function {
             color: #60a5fa;
         }
+        .help-code .number {
+            color: #fbbf24;
+        }
         .copy-btn {
             position: absolute;
             top: 6px;
@@ -755,6 +758,7 @@
                 <button class="help-tab active" onclick="showHelpTab('submit')">Submit</button>
                 <button class="help-tab" onclick="showHelpTab('value')">input.value</button>
                 <button class="help-tab" onclick="showHelpTab('validation')">Erreurs par champ</button>
+                <button class="help-tab" onclick="showHelpTab('fonctions')">Fonctions maths</button>
                 <button class="help-tab" onclick="showHelpTab('complet')">Exemple complet</button>
             </div>
 
@@ -821,6 +825,32 @@ form.<span class="function">addEventListener</span>(<span class="string">"submit
                     </div>
                     <div class="help-tip">
                         &#x1F4A1; Chaque champ a sa zone d'erreur <strong>#erreur-NOMDUCHAMP</strong>. On y ecrit le message en cas de probleme, et on la VIDE ("") quand la saisie est correcte (comme un vrai formulaire).
+                    </div>
+                </div>
+            </div>
+
+            <!-- Fonctions Tab -->
+            <div class="help-tab-content" id="help-fonctions">
+                <div class="help-section">
+                    <div class="help-section-title">&#x1F9EE; Fonctions mathematiques</div>
+                    <div class="help-card">
+                        <div class="help-card-title">Racine carree &rarr; Math.sqrt(x)</div>
+                        <div class="help-code"><button class="copy-btn" onclick="copyCode(this)">Copier</button><span class="keyword">const</span> r = <span class="function">Math.sqrt</span>(<span class="number">9</span>);  <span class="comment">// 3</span></div>
+                    </div>
+                    <div class="help-card">
+                        <div class="help-card-title">Puissance / carre &rarr; Math.pow(x, n) ou x ** n</div>
+                        <div class="help-code"><button class="copy-btn" onclick="copyCode(this)">Copier</button><span class="keyword">const</span> carre = <span class="function">Math.pow</span>(b, <span class="number">2</span>);  <span class="comment">// b au carre</span>
+<span class="keyword">const</span> carre2 = b ** <span class="number">2</span>;        <span class="comment">// identique</span></div>
+                    </div>
+                    <div class="help-card">
+                        <div class="help-card-title">Autres fonctions utiles</div>
+                        <div class="help-code"><button class="copy-btn" onclick="copyCode(this)">Copier</button><span class="function">Math.round</span>(x)   <span class="comment">// arrondi a l'entier</span>
+<span class="function">Math.abs</span>(x)     <span class="comment">// valeur absolue</span>
+<span class="function">Math.max</span>(a, b)  <span class="comment">// le plus grand</span>
+<span class="function">Math.min</span>(a, b)  <span class="comment">// le plus petit</span></div>
+                    </div>
+                    <div class="help-tip">
+                        &#x1F4A1; Pour l'equation du second degre : discriminant <strong>delta = Math.pow(b, 2) - 4*a*c</strong> (ou b*b), puis les solutions utilisent <strong>Math.sqrt(delta)</strong>.
                     </div>
                 </div>
             </div>
@@ -1163,7 +1193,7 @@ form.<span class="function">addEventListener</span>(<span class="string">"submit
             {
                 id: 9,
                 category: "Equation 2nd degre",
-                text: "<span class='text-cyan-400 font-mono text-xs'>IDs : #formulaire, #a, #b, #c, #erreur-a, #message</span><br>R&eacute;solvez l'&eacute;quation du second degr&eacute; <strong>a&middot;x&sup2; + b&middot;x + c = 0</strong>. Convertissez a, b, c en nombre. Si #a vaut 0 &rarr; #erreur-a = 'a ne doit pas etre 0'. Sinon calculez le discriminant <strong>delta = b&middot;b - 4&middot;a&middot;c</strong> : si delta &lt; 0 &rarr; #message = 'Pas de solution reelle' ; si delta = 0 &rarr; une solution <strong>x = -b / (2&middot;a)</strong> ; si delta &gt; 0 &rarr; deux solutions avec <strong>Math.sqrt(delta)</strong> et #message = 'x1 = ... ; x2 = ...'.",
+                text: "<span class='text-cyan-400 font-mono text-xs'>IDs : #formulaire, #a, #b, #c, #erreur-a, #message</span><br><span class='text-amber-300 font-mono text-xs'>Fonctions : racine carr&eacute;e &rarr; <strong>Math.sqrt(x)</strong> &middot; carr&eacute;/puissance &rarr; <strong>Math.pow(x, 2)</strong> ou <strong>x ** 2</strong></span><br>R&eacute;solvez l'&eacute;quation du second degr&eacute; <strong>a&middot;x&sup2; + b&middot;x + c = 0</strong>. Convertissez a, b, c en nombre. Si #a vaut 0 &rarr; #erreur-a = 'a ne doit pas etre 0'. Sinon calculez le discriminant <strong>delta = b&middot;b - 4&middot;a&middot;c</strong> (ou <strong>Math.pow(b, 2) - 4*a*c</strong>) : si delta &lt; 0 &rarr; #message = 'Pas de solution reelle' ; si delta = 0 &rarr; une solution <strong>x = -b / (2&middot;a)</strong> ; si delta &gt; 0 &rarr; deux solutions avec <strong>Math.sqrt(delta)</strong> et #message = 'x1 = ... ; x2 = ...'.",
                 formHtml: formulaire(`<label class="text-xs text-slate-400">a x&sup2; + b x + c = 0</label><div class="form-grid" style="grid-template-columns:repeat(3,1fr)">${champ('a', 'a', 'number', 'ex: 1')}${champNu('b', 'b', 'number', 'ex: -3')}${champNu('c', 'c', 'number', 'ex: 2')}</div>`, "Resoudre"),
                 ids: [
                     { id: 'formulaire', desc: 'le formulaire a ecouter' },
