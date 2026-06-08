@@ -190,6 +190,75 @@
         }
         .trigger-btn:hover { background: rgba(59, 130, 246, 0.3); }
 
+        /* ENCADRE DES IDs (rappel permanent) */
+        .ids-box {
+            background: rgba(6, 182, 212, 0.07);
+            border: 1px solid rgba(6, 182, 212, 0.25);
+            border-radius: 10px;
+            padding: 12px 14px;
+            margin-bottom: 14px;
+        }
+        .ids-box-title {
+            font-size: 12px;
+            font-weight: 700;
+            color: var(--accent-cyan);
+            margin-bottom: 8px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+        .ids-box ul { display: grid; grid-template-columns: 1fr; gap: 4px; margin: 0; padding: 0; }
+        @media (min-width: 640px) { .ids-box ul { grid-template-columns: 1fr 1fr; } }
+        .ids-box li { font-size: 12px; color: var(--text-muted); list-style: none; }
+        .ids-box code {
+            color: var(--accent-js);
+            font-family: 'JetBrains Mono', monospace;
+            font-weight: 700;
+        }
+
+        /* BALISE #message : la zone ou le code affiche le resultat */
+        .sandbox-message {
+            margin-top: 14px;
+            padding: 12px 14px;
+            min-height: 46px;
+            background: var(--bg-darkest);
+            border: 1px solid rgba(34, 197, 94, 0.35);
+            border-radius: 8px;
+            color: var(--accent-green);
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 14px;
+            white-space: pre-wrap;
+            word-break: break-word;
+        }
+        .sandbox-message:empty::before {
+            content: "(le message s'affichera ici)";
+            color: var(--text-muted);
+            font-style: italic;
+        }
+
+        /* CHAMPS DE FORMULAIRE + ERREUR SOUS CHAQUE CHAMP */
+        .field-row { display: flex; flex-direction: column; gap: 4px; }
+        .field-row > label {
+            font-size: 12px;
+            color: var(--text-muted);
+            font-weight: 600;
+        }
+        .field-check {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 13px;
+            color: var(--text-main);
+        }
+        .field-check input { width: 16px; height: 16px; accent-color: var(--accent-cyan); }
+        .field-error {
+            min-height: 16px;
+            font-size: 12px;
+            color: var(--accent-red);
+            font-family: 'JetBrains Mono', monospace;
+        }
+        .form-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px; }
+        @media (max-width: 480px) { .form-grid { grid-template-columns: 1fr; } }
+
         .modal-overlay {
             position: fixed;
             inset: 0;
@@ -476,7 +545,7 @@
             <h1 class="text-3xl font-bold mb-2 bg-gradient-to-r from-cyan-400 to-blue-500 bg-clip-text text-transparent">
                 Formulaires Challenge
             </h1>
-            <p class="text-slate-400 mb-8">TP Formulaires JavaScript : r&eacute;cup&eacute;rer une saisie avec submit, preventDefault, input.value &amp; validation simple - EXPERNET</p>
+            <p class="text-slate-400 mb-8">TP Formulaires JavaScript : de vrais formulaires (inscription, calcul d'&acirc;ge, moyenne, &eacute;quations) avec validations et messages d'erreur sous chaque champ - EXPERNET</p>
 
             <form id="login-form" class="space-y-4">
                 <div class="text-left">
@@ -616,19 +685,13 @@
                             <label class="text-sm text-slate-400 mb-2 block">&#x1F9EA; Zone de test (le formulaire cibl&eacute; par votre code) :</label>
                             <div class="sandbox-zone">
                                 <div id="sandbox"></div>
-                                <div class="flex flex-wrap gap-2 mt-4 pt-3 border-t border-cyan-500/20">
-                                    <span class="text-xs text-slate-500 w-full">D&eacute;clencheurs (remplissent puis soumettent le formulaire) :</span>
-                                    <button type="button" class="trigger-btn" onclick="fireSubmit({nom:'Anli',email:'anli@mail.com',motdepasse:'secret123',age:'25'})">&#x2705; Donn&eacute;es valides</button>
-                                    <button type="button" class="trigger-btn" onclick="fireSubmit({nom:'',email:'x@y.com',motdepasse:'secret123',age:'25'})">&#x1F6AB; Nom vide</button>
-                                    <button type="button" class="trigger-btn" onclick="fireSubmit({nom:'Anli',email:'bonjour',motdepasse:'123',age:'25'})">&#x2709; Email sans @</button>
-                                    <button type="button" class="trigger-btn" onclick="fireSubmit({nom:'Anli',email:'a@b.com',motdepasse:'secret123',age:'15'})">&#x1F476; Mineur (age 15)</button>
-                                </div>
+                                <div id="triggers" class="flex flex-wrap gap-2 mt-4 pt-3 border-t border-cyan-500/20"></div>
                             </div>
                         </div>
 
                         <div class="mb-4">
                             <label class="text-sm text-slate-400 mb-2 block">&#x1F4DD; Votre code :</label>
-                            <textarea id="code-input" class="code-input" placeholder="// Ecoutez le submit du formulaire, puis cliquez sur Executer..."></textarea>
+                            <textarea id="code-input" class="code-input" placeholder="// Ecoutez le submit de #formulaire, validez les champs : erreurs dans #erreur-... et succes dans #message. Puis cliquez sur Executer ou Valider..."></textarea>
                         </div>
 
                         <div class="flex gap-3 mb-4">
@@ -644,9 +707,9 @@
                         </div>
 
                         <div>
-                            <label class="text-sm text-slate-400 mb-2 block">&#x1F4BB; Console :</label>
-                            <div id="console-output" class="console-output">
-                                <span class="text-slate-500">// La sortie de votre code s'affichera ici...</span>
+                            <label class="text-sm text-slate-400 mb-2 block">&#x1F4CB; Retour de validation :</label>
+                            <div id="feedback" class="console-output">
+                                <span class="text-slate-500">// Le r&eacute;sultat de votre code s'affiche dans <strong>#message</strong> (zone de test ci-dessus). Ici appara&icirc;t la validation de la mission.</span>
                             </div>
                         </div>
                     </div>
@@ -664,11 +727,11 @@
                     </div>
                     <div class="bg-slate-800/50 rounded-lg p-3 text-xs">
                         <div class="text-cyan-400 font-semibold mb-1">Lire la saisie</div>
-                        <code class="text-slate-400">input.value</code>
+                        <code class="text-slate-400">document.getElementById("nom").value</code>
                     </div>
                     <div class="bg-slate-800/50 rounded-lg p-3 text-xs">
-                        <div class="text-cyan-400 font-semibold mb-1">Valider</div>
-                        <code class="text-slate-400">if (value === "") ...</code>
+                        <div class="text-cyan-400 font-semibold mb-1">Erreur sous un champ</div>
+                        <code class="text-slate-400">document.getElementById("erreur-nom").textContent = "..."</code>
                     </div>
                 </div>
             </div>
@@ -683,7 +746,7 @@
                 <h2 class="text-xl font-bold text-cyan-400">&#x1F4DA; Aide Formulaires</h2>
                 <button onclick="toggleHelp()" class="text-slate-400 hover:text-white text-2xl">&times;</button>
             </div>
-            <p class="text-slate-400 text-sm mt-1">submit &middot; preventDefault &middot; input.value &middot; validation</p>
+            <p class="text-slate-400 text-sm mt-1">submit &middot; input.value &middot; erreurs par champ &middot; calculs</p>
         </div>
 
         <div class="help-panel-body">
@@ -691,7 +754,7 @@
             <div class="help-tabs">
                 <button class="help-tab active" onclick="showHelpTab('submit')">Submit</button>
                 <button class="help-tab" onclick="showHelpTab('value')">input.value</button>
-                <button class="help-tab" onclick="showHelpTab('validation')">Validation</button>
+                <button class="help-tab" onclick="showHelpTab('validation')">Erreurs par champ</button>
                 <button class="help-tab" onclick="showHelpTab('complet')">Exemple complet</button>
             </div>
 
@@ -704,11 +767,11 @@
                         <div class="help-code"><button class="copy-btn" onclick="copyCode(this)">Copier</button><span class="keyword">const</span> form = <span class="function">document.getElementById</span>(<span class="string">"formulaire"</span>);
 form.<span class="function">addEventListener</span>(<span class="string">"submit"</span>, (event) => {
     event.<span class="function">preventDefault</span>();
-    <span class="function">console.log</span>(<span class="string">"Formulaire soumis"</span>);
+    <span class="function">document.getElementById</span>(<span class="string">"message"</span>).textContent = <span class="string">"Formulaire soumis"</span>;
 });</div>
                     </div>
                     <div class="help-tip">
-                        &#x1F4A1; Sans preventDefault(), la page se recharge a chaque envoi et le JavaScript n'a pas le temps de traiter les donnees.
+                        &#x1F4A1; On ecrit le resultat dans la balise &lt;p id="message"&gt; avec .textContent. Sans preventDefault(), la page se recharge a chaque envoi et le JavaScript n'a pas le temps de traiter les donnees.
                     </div>
                 </div>
             </div>
@@ -718,15 +781,15 @@ form.<span class="function">addEventListener</span>(<span class="string">"submit
                 <div class="help-section">
                     <div class="help-section-title">&#x2328; Recuperer la saisie</div>
                     <div class="help-card">
-                        <div class="help-card-title">input.value</div>
+                        <div class="help-card-title">input.value &rarr; #message</div>
                         <div class="help-code"><button class="copy-btn" onclick="copyCode(this)">Copier</button><span class="keyword">const</span> nom = <span class="function">document.getElementById</span>(<span class="string">"nom"</span>).value;
-<span class="function">console.log</span>(nom);</div>
+<span class="function">document.getElementById</span>(<span class="string">"message"</span>).textContent = nom;</div>
                     </div>
                     <div class="help-card">
                         <div class="help-card-title">Plusieurs champs</div>
                         <div class="help-code"><button class="copy-btn" onclick="copyCode(this)">Copier</button><span class="keyword">const</span> nom = <span class="function">document.getElementById</span>(<span class="string">"nom"</span>).value;
 <span class="keyword">const</span> email = <span class="function">document.getElementById</span>(<span class="string">"email"</span>).value;
-<span class="function">console.log</span>(nom, email);</div>
+<span class="function">document.getElementById</span>(<span class="string">"message"</span>).textContent = nom + <span class="string">" "</span> + email;</div>
                     </div>
                     <div class="help-tip">
                         &#x1F4A1; .value renvoie TOUJOURS une chaine de caracteres (string), meme pour un champ de type number. Utilisez Number(...) pour comparer des nombres.
@@ -737,27 +800,27 @@ form.<span class="function">addEventListener</span>(<span class="string">"submit
             <!-- Validation Tab -->
             <div class="help-tab-content" id="help-validation">
                 <div class="help-section">
-                    <div class="help-section-title">&#x2705; Validation simple</div>
+                    <div class="help-section-title">&#x2705; Une erreur SOUS chaque champ</div>
                     <div class="help-card">
-                        <div class="help-card-title">Champ obligatoire</div>
+                        <div class="help-card-title">Champ obligatoire &rarr; #erreur-nom</div>
                         <div class="help-code"><button class="copy-btn" onclick="copyCode(this)">Copier</button><span class="keyword">if</span> (nom === <span class="string">""</span>) {
-    <span class="function">console.log</span>(<span class="string">"Le nom est obligatoire"</span>);
+    <span class="function">document.getElementById</span>(<span class="string">"erreur-nom"</span>).textContent = <span class="string">"Le nom est obligatoire"</span>;
 }</div>
                     </div>
                     <div class="help-card">
-                        <div class="help-card-title">Longueur minimale</div>
+                        <div class="help-card-title">Mot de passe trop court</div>
                         <div class="help-code"><button class="copy-btn" onclick="copyCode(this)">Copier</button><span class="keyword">if</span> (mdp.length < 6) {
-    <span class="function">console.log</span>(<span class="string">"Mot de passe trop court"</span>);
+    <span class="function">document.getElementById</span>(<span class="string">"erreur-motdepasse"</span>).textContent = <span class="string">"6 caracteres minimum"</span>;
 }</div>
                     </div>
                     <div class="help-card">
-                        <div class="help-card-title">Email valide (contient @)</div>
-                        <div class="help-code"><button class="copy-btn" onclick="copyCode(this)">Copier</button><span class="keyword">if</span> (!email.<span class="function">includes</span>(<span class="string">"@"</span>)) {
-    <span class="function">console.log</span>(<span class="string">"Email invalide"</span>);
+                        <div class="help-card-title">Penser a VIDER l'erreur si tout est bon</div>
+                        <div class="help-code"><button class="copy-btn" onclick="copyCode(this)">Copier</button><span class="keyword">else</span> {
+    <span class="function">document.getElementById</span>(<span class="string">"erreur-nom"</span>).textContent = <span class="string">""</span>;
 }</div>
                     </div>
                     <div class="help-tip">
-                        &#x1F4A1; .trim() enleve les espaces au debut et a la fin : pratique pour empecher une saisie composee uniquement d'espaces.
+                        &#x1F4A1; Chaque champ a sa zone d'erreur <strong>#erreur-NOMDUCHAMP</strong>. On y ecrit le message en cas de probleme, et on la VIDE ("") quand la saisie est correcte (comme un vrai formulaire).
                     </div>
                 </div>
             </div>
@@ -767,20 +830,30 @@ form.<span class="function">addEventListener</span>(<span class="string">"submit
                 <div class="help-section">
                     <div class="help-section-title">&#x1F9E9; Tout assembler</div>
                     <div class="help-card">
-                        <div class="help-card-title">Formulaire valide</div>
+                        <div class="help-card-title">Plusieurs champs + drapeau "ok"</div>
                         <div class="help-code"><button class="copy-btn" onclick="copyCode(this)">Copier</button>form.<span class="function">addEventListener</span>(<span class="string">"submit"</span>, (e) => {
     e.<span class="function">preventDefault</span>();
     <span class="keyword">const</span> nom = <span class="function">document.getElementById</span>(<span class="string">"nom"</span>).value;
     <span class="keyword">const</span> email = <span class="function">document.getElementById</span>(<span class="string">"email"</span>).value;
-    <span class="keyword">if</span> (nom !== <span class="string">""</span> && email.<span class="function">includes</span>(<span class="string">"@"</span>)) {
-        <span class="function">console.log</span>(<span class="string">"Bienvenue "</span> + nom);
-    } <span class="keyword">else</span> {
-        <span class="function">console.log</span>(<span class="string">"Formulaire invalide"</span>);
+    <span class="comment">// on vide d'abord les erreurs</span>
+    <span class="function">document.getElementById</span>(<span class="string">"erreur-nom"</span>).textContent = <span class="string">""</span>;
+    <span class="function">document.getElementById</span>(<span class="string">"erreur-email"</span>).textContent = <span class="string">""</span>;
+    <span class="keyword">let</span> ok = <span class="keyword">true</span>;
+    <span class="keyword">if</span> (nom === <span class="string">""</span>) {
+        <span class="function">document.getElementById</span>(<span class="string">"erreur-nom"</span>).textContent = <span class="string">"Nom obligatoire"</span>;
+        ok = <span class="keyword">false</span>;
+    }
+    <span class="keyword">if</span> (!email.<span class="function">includes</span>(<span class="string">"@"</span>)) {
+        <span class="function">document.getElementById</span>(<span class="string">"erreur-email"</span>).textContent = <span class="string">"Email invalide"</span>;
+        ok = <span class="keyword">false</span>;
+    }
+    <span class="keyword">if</span> (ok) {
+        <span class="function">document.getElementById</span>(<span class="string">"message"</span>).textContent = <span class="string">"Inscription reussie"</span>;
     }
 });</div>
                     </div>
                     <div class="help-tip">
-                        &#x1F4A1; On combine submit + preventDefault + lecture des valeurs + validation. C'est le coeur du traitement d'un formulaire en JavaScript.
+                        &#x1F4A1; Le drapeau <strong>ok</strong> reste vrai seulement si AUCUNE erreur n'a ete trouvee. On affiche le succes dans #message uniquement quand ok est vrai. Pour un calcul (age, moyenne, equation), on utilise <strong>Number(...)</strong> pour convertir la saisie en nombre.
                     </div>
                 </div>
             </div>
@@ -845,128 +918,305 @@ form.<span class="function">addEventListener</span>(<span class="string">"submit
             bonusTimePoints: 10
         };
 
-        // ==================== ZONE DE TEST (SANDBOX) ====================
-        const SANDBOX_HTML = `
-            <form id="formulaire" class="flex flex-col gap-3">
-                <input id="nom" type="text" class="sandbox-input" placeholder="Nom">
-                <input id="email" type="email" class="sandbox-input" placeholder="Email">
-                <input id="motdepasse" type="password" class="sandbox-input" placeholder="Mot de passe">
-                <input id="age" type="number" class="sandbox-input" placeholder="Age">
-                <button type="submit" class="sandbox-btn self-start">Envoyer</button>
-            </form>
-        `;
+        // ==================== CONSTRUCTION DES FORMULAIRES ====================
+        const ANNEE_ACTUELLE = 2026;
 
-        // ==================== MISSIONS DATABASE (FORMULAIRES) ====================
+        // Champ avec sa propre zone d'erreur (#erreur-<id>)
+        function champ(id, label, type, ph) {
+            return `<div class="field-row"><label>${label}</label>` +
+                   `<input id="${id}" type="${type || 'text'}" class="sandbox-input" placeholder="${ph || ''}">` +
+                   `<span id="erreur-${id}" class="field-error"></span></div>`;
+        }
+        // Champ SANS zone d'erreur individuelle (validation groupee)
+        function champNu(id, label, type, ph) {
+            return `<div class="field-row"><label>${label}</label>` +
+                   `<input id="${id}" type="${type || 'text'}" class="sandbox-input" placeholder="${ph || ''}"></div>`;
+        }
+        // Case a cocher avec zone d'erreur
+        function caseCocher(id, label) {
+            return `<div class="field-row"><label class="field-check"><input id="${id}" type="checkbox"> ${label}</label>` +
+                   `<span id="erreur-${id}" class="field-error"></span></div>`;
+        }
+        // Zone d'erreur isolee (pour une validation groupee)
+        function zoneErreur(id) {
+            return `<span id="${id}" class="field-error"></span>`;
+        }
+        // Enveloppe : <form id="formulaire"> ... <button>  +  <p id="message">
+        function formulaire(inner, btn) {
+            return `<form id="formulaire" class="flex flex-col gap-3">${inner}` +
+                   `<button type="submit" class="sandbox-btn self-start">${btn || 'Envoyer'}</button></form>` +
+                   `<p id="message" class="sandbox-message"></p>`;
+        }
+
+        // ==================== MISSIONS DATABASE (FORMULAIRES REELS) ====================
+        // Chaque mission est un VRAI formulaire. Les erreurs s'affichent SOUS chaque champ
+        // dans <span id="erreur-XXX">, et le succes dans <p id="message">.
+        // - formHtml  : le formulaire affiche dans la zone de test
+        // - ids       : la liste des IDs rappeles dans l'encadre
+        // - triggers  : boutons qui remplissent + envoient le formulaire (test manuel)
+        // - validate  : verifie que le code utilise les bons concepts
+        // - scenarios : remplit le formulaire et verifie le contenu des erreurs / du message
         const missions = [
             {
                 id: 1,
-                category: "Submit",
-                text: "Sur le formulaire <strong>#formulaire</strong>, &eacute;coutez <strong>submit</strong>, appelez <strong>event.preventDefault()</strong> puis affichez 'Formulaire soumis'.",
-                hint: "document.getElementById('formulaire').addEventListener('submit', (event) => { event.preventDefault(); console.log('Formulaire soumis'); });",
-                expected: "// Formulaire soumis  (a l'envoi)",
-                explication: "submit se declenche a l'envoi du formulaire. preventDefault() empeche le rechargement de la page pour pouvoir traiter les donnees en JS.",
-                validate: (code) => /addEventListener\s*\(\s*['\"]submit['\"]/.test(code) && /preventDefault/.test(code),
-                fire: () => fireSubmit({ nom: 'Anli', email: 'a@b.com', motdepasse: 'secret123', age: '25' }),
-                validateOutput: (output) => output.trim().length > 0
+                category: "Obligatoire",
+                text: "<span class='text-cyan-400 font-mono text-xs'>IDs : #formulaire, #nom, #erreur-nom, #message</span><br>Formulaire d'inscription. &Eacute;coutez le <strong>submit</strong> de #formulaire et faites <strong>preventDefault()</strong>. Si <strong>#nom</strong> est vide, &eacute;crivez 'Le nom est obligatoire' dans <strong>#erreur-nom</strong>. Sinon, videz #erreur-nom et &eacute;crivez 'Bienvenue ' + nom dans <strong>#message</strong>.",
+                formHtml: formulaire(champ('nom', 'Nom', 'text', 'Votre nom'), "S'inscrire"),
+                ids: [
+                    { id: 'formulaire', desc: 'le formulaire a ecouter' },
+                    { id: 'nom', desc: 'champ Nom (.value)' },
+                    { id: 'erreur-nom', desc: 'erreur affichee sous le champ Nom' },
+                    { id: 'message', desc: 'message de succes' }
+                ],
+                hint: "document.getElementById('formulaire').addEventListener('submit', (e) => { e.preventDefault(); const nom = document.getElementById('nom').value; if (nom === '') { document.getElementById('erreur-nom').textContent = 'Le nom est obligatoire'; } else { document.getElementById('erreur-nom').textContent = ''; document.getElementById('message').textContent = 'Bienvenue ' + nom; } });",
+                expected: "Nom vide   -> #erreur-nom : Le nom est obligatoire\nNom rempli -> #message : Bienvenue Anli",
+                explication: "Comme dans un vrai formulaire, l'erreur s'affiche juste sous le champ concerne (#erreur-nom), et le succes dans #message. On pense a vider l'erreur quand tout est bon.",
+                validate: (code) => /addEventListener\s*\(\s*['\"]submit['\"]/.test(code) && /preventDefault/.test(code) && /erreur-nom/.test(code) && /value/.test(code) && /\bif\b/.test(code),
+                triggers: [
+                    { label: "\u{1F6AB} Nom vide", values: { nom: '' } },
+                    { label: "✅ Nom rempli", values: { nom: 'Anli' } }
+                ],
+                scenarios: [
+                    { values: { nom: '' }, expect: { 'erreur-nom': /obligatoire/i } },
+                    { values: { nom: 'Anli' }, expect: { 'erreur-nom': '', 'message': /bienvenue/i } }
+                ]
             },
             {
                 id: 2,
-                category: "input.value",
-                text: "&Agrave; l'envoi, bloquez le rechargement puis affichez la <strong>valeur du champ #nom</strong> avec <strong>.value</strong>.",
-                hint: "document.getElementById('formulaire').addEventListener('submit', (e) => { e.preventDefault(); console.log(document.getElementById('nom').value); });",
-                expected: "// Anli  (a l'envoi)",
-                explication: "document.getElementById('nom').value recupere le texte saisi dans le champ nom au moment de l'envoi.",
-                validate: (code) => /addEventListener\s*\(\s*['\"]submit['\"]/.test(code) && /value/.test(code),
-                fire: () => fireSubmit({ nom: 'Anli', email: 'a@b.com', motdepasse: 'secret123', age: '25' }),
-                validateOutput: (output) => output.toLowerCase().includes('anli')
+                category: "Email",
+                text: "<span class='text-cyan-400 font-mono text-xs'>IDs : #formulaire, #email, #erreur-email, #message</span><br>Si <strong>#email</strong> ne contient pas '@' <strong>OU</strong> pas '.', &eacute;crivez 'Email invalide' dans <strong>#erreur-email</strong>. Sinon videz l'erreur et &eacute;crivez 'Email accepte' dans <strong>#message</strong>.",
+                formHtml: formulaire(champ('email', 'Email', 'text', 'exemple@mail.com'), "Valider"),
+                ids: [
+                    { id: 'formulaire', desc: 'le formulaire a ecouter' },
+                    { id: 'email', desc: 'champ Email (.value)' },
+                    { id: 'erreur-email', desc: 'erreur sous le champ Email' },
+                    { id: 'message', desc: 'message de succes' }
+                ],
+                hint: "document.getElementById('formulaire').addEventListener('submit', (e) => { e.preventDefault(); const email = document.getElementById('email').value; if (!email.includes('@') || !email.includes('.')) { document.getElementById('erreur-email').textContent = 'Email invalide'; } else { document.getElementById('erreur-email').textContent = ''; document.getElementById('message').textContent = 'Email accepte'; } });",
+                expected: "'bonjour'      -> #erreur-email : Email invalide\n'anli@mail.com'-> #message : Email accepte",
+                explication: "Un email realiste contient au moins un '@' et un '.'. On combine deux tests avec l'operateur OU (||).",
+                validate: (code) => /addEventListener\s*\(\s*['\"]submit['\"]/.test(code) && /erreur-email/.test(code) && /includes/.test(code) && code.includes('@'),
+                triggers: [
+                    { label: "✉ Sans @", values: { email: 'bonjour' } },
+                    { label: "✅ Email valide", values: { email: 'anli@mail.com' } }
+                ],
+                scenarios: [
+                    { values: { email: 'bonjour' }, expect: { 'erreur-email': /invalide/i } },
+                    { values: { email: 'anli@mail.com' }, expect: { 'erreur-email': '', 'message': /accept/i } }
+                ]
             },
             {
                 id: 3,
-                category: "input.value",
-                text: "&Agrave; l'envoi, affichez &agrave; la fois la valeur de <strong>#nom</strong> et celle de <strong>#email</strong>.",
-                hint: "document.getElementById('formulaire').addEventListener('submit', (e) => { e.preventDefault(); const nom = document.getElementById('nom').value; const email = document.getElementById('email').value; console.log(nom, email); });",
-                expected: "// Anli anli@mail.com  (a l'envoi)",
-                explication: "On lit deux champs : nom et email. On peut afficher plusieurs valeurs dans un seul console.log en les separant par une virgule.",
-                validate: (code) => /addEventListener\s*\(\s*['\"]submit['\"]/.test(code) && /value/.test(code) && /email/.test(code),
-                fire: () => fireSubmit({ nom: 'Anli', email: 'anli@mail.com', motdepasse: 'secret123', age: '25' }),
-                validateOutput: (output) => output.toLowerCase().includes('anli') && output.includes('@')
+                category: "Mot de passe",
+                text: "<span class='text-cyan-400 font-mono text-xs'>IDs : #formulaire, #motdepasse, #confirmation, #erreur-motdepasse, #erreur-confirmation, #message</span><br>Videz d'abord les 2 erreurs. Si <strong>#motdepasse</strong> fait moins de 6 caract&egrave;res &rarr; #erreur-motdepasse = '6 caracteres minimum'. Si <strong>#confirmation</strong> est diff&eacute;rent de #motdepasse &rarr; #erreur-confirmation = 'Les mots de passe ne correspondent pas'. Si tout est bon &rarr; #message = 'Mot de passe valide'.",
+                formHtml: formulaire(champ('motdepasse', 'Mot de passe', 'password', '6 caracteres min') + champ('confirmation', 'Confirmer le mot de passe', 'password', 'Retapez le mot de passe'), "Valider"),
+                ids: [
+                    { id: 'formulaire', desc: 'le formulaire a ecouter' },
+                    { id: 'motdepasse', desc: 'champ Mot de passe (.value, .length)' },
+                    { id: 'confirmation', desc: 'champ Confirmation (.value)' },
+                    { id: 'erreur-motdepasse', desc: 'erreur sous Mot de passe' },
+                    { id: 'erreur-confirmation', desc: 'erreur sous Confirmation' },
+                    { id: 'message', desc: 'message de succes' }
+                ],
+                hint: "document.getElementById('formulaire').addEventListener('submit', (e) => { e.preventDefault(); const mdp = document.getElementById('motdepasse').value; const conf = document.getElementById('confirmation').value; document.getElementById('erreur-motdepasse').textContent = ''; document.getElementById('erreur-confirmation').textContent = ''; let ok = true; if (mdp.length < 6) { document.getElementById('erreur-motdepasse').textContent = '6 caracteres minimum'; ok = false; } if (conf !== mdp) { document.getElementById('erreur-confirmation').textContent = 'Les mots de passe ne correspondent pas'; ok = false; } if (ok) { document.getElementById('message').textContent = 'Mot de passe valide'; } });",
+                expected: "'123'/'123'           -> #erreur-motdepasse : 6 caracteres minimum\n'secret123'/'autre99' -> #erreur-confirmation : ... ne correspondent pas\nidentiques (>=6)      -> #message : Mot de passe valide",
+                explication: "Deux validations independantes, chacune avec sa propre zone d'erreur. La variable 'ok' reste vraie seulement si aucune erreur n'a ete trouvee.",
+                validate: (code) => /addEventListener\s*\(\s*['\"]submit['\"]/.test(code) && /length/.test(code) && /erreur-motdepasse/.test(code) && /erreur-confirmation/.test(code) && /confirmation/.test(code),
+                triggers: [
+                    { label: "\u{1F511} Trop court", values: { motdepasse: '123', confirmation: '123' } },
+                    { label: "≠ Differents", values: { motdepasse: 'secret123', confirmation: 'autre99' } },
+                    { label: "✅ Identiques", values: { motdepasse: 'secret123', confirmation: 'secret123' } }
+                ],
+                scenarios: [
+                    { values: { motdepasse: '123', confirmation: '123' }, expect: { 'erreur-motdepasse': /minimum|caracter|6/i } },
+                    { values: { motdepasse: 'secret123', confirmation: 'autre99' }, expect: { 'erreur-confirmation': /correspond/i } },
+                    { values: { motdepasse: 'secret123', confirmation: 'secret123' }, expect: { 'erreur-motdepasse': '', 'erreur-confirmation': '', 'message': /valid/i } }
+                ]
             },
             {
                 id: 4,
-                category: "Validation",
-                text: "&Agrave; l'envoi : si le champ <strong>#nom</strong> est vide (<strong>=== ''</strong>), affichez 'Le nom est obligatoire', sinon affichez le nom.",
-                hint: "document.getElementById('formulaire').addEventListener('submit', (e) => { e.preventDefault(); const nom = document.getElementById('nom').value; if (nom === '') { console.log('Le nom est obligatoire'); } else { console.log(nom); } });",
-                expected: "// Le nom est obligatoire",
-                explication: "On verifie si la valeur est une chaine vide. Le declencheur envoie un nom vide : la branche d'erreur s'affiche.",
-                validate: (code) => /addEventListener\s*\(\s*['\"]submit['\"]/.test(code) && /\bif\b/.test(code) && /value/.test(code),
-                fire: () => fireSubmit({ nom: '', email: 'x@y.com', motdepasse: 'secret123', age: '25' }),
-                validateOutput: (output) => output.toLowerCase().includes('obligatoire')
+                category: "Case a cocher",
+                text: "<span class='text-cyan-400 font-mono text-xs'>IDs : #formulaire, #conditions, #erreur-conditions, #message</span><br>La case <strong>#conditions</strong> a une propri&eacute;t&eacute; <strong>.checked</strong> (true / false). Si la case n'est <strong>PAS</strong> coch&eacute;e (<strong>!checked</strong>) &rarr; #erreur-conditions = 'Vous devez accepter les conditions'. Sinon videz l'erreur et #message = 'Conditions acceptees'.",
+                formHtml: formulaire(caseCocher('conditions', "J'accepte les conditions d'utilisation"), "Valider"),
+                ids: [
+                    { id: 'formulaire', desc: 'le formulaire a ecouter' },
+                    { id: 'conditions', desc: 'case a cocher (.checked)' },
+                    { id: 'erreur-conditions', desc: 'erreur sous la case' },
+                    { id: 'message', desc: 'message de succes' }
+                ],
+                hint: "document.getElementById('formulaire').addEventListener('submit', (e) => { e.preventDefault(); const accepte = document.getElementById('conditions').checked; if (!accepte) { document.getElementById('erreur-conditions').textContent = 'Vous devez accepter les conditions'; } else { document.getElementById('erreur-conditions').textContent = ''; document.getElementById('message').textContent = 'Conditions acceptees'; } });",
+                expected: "case non cochee -> #erreur-conditions : Vous devez accepter les conditions\ncase cochee     -> #message : Conditions acceptees",
+                explication: "Pour une case a cocher on n'utilise PAS .value mais .checked, qui vaut true (cochee) ou false (non cochee).",
+                validate: (code) => /addEventListener\s*\(\s*['\"]submit['\"]/.test(code) && /checked/.test(code) && /erreur-conditions/.test(code),
+                triggers: [
+                    { label: "☐ Non cochee", values: { conditions: false } },
+                    { label: "☑ Cochee", values: { conditions: true } }
+                ],
+                scenarios: [
+                    { values: { conditions: false }, expect: { 'erreur-conditions': /accept/i } },
+                    { values: { conditions: true }, expect: { 'erreur-conditions': '', 'message': /accept/i } }
+                ]
             },
             {
                 id: 5,
-                category: "Validation",
-                text: "&Agrave; l'envoi : si le <strong>#motdepasse</strong> fait moins de <strong>6 caract&egrave;res</strong> (.length &lt; 6), affichez 'Mot de passe trop court'.",
-                hint: "document.getElementById('formulaire').addEventListener('submit', (e) => { e.preventDefault(); const mdp = document.getElementById('motdepasse').value; if (mdp.length < 6) { console.log('Mot de passe trop court'); } else { console.log('Mot de passe OK'); } });",
-                expected: "// Mot de passe trop court  (pour '123')",
-                explication: ".length donne le nombre de caracteres. Le declencheur envoie '123' (3 caracteres), donc le message d'erreur s'affiche.",
-                validate: (code) => /addEventListener\s*\(\s*['\"]submit['\"]/.test(code) && /length/.test(code) && /6/.test(code),
-                fire: () => fireSubmit({ nom: 'Anli', email: 'a@b.com', motdepasse: '123', age: '25' }),
-                validateOutput: (output) => output.toLowerCase().includes('court')
+                category: "Inscription",
+                text: "<span class='text-cyan-400 font-mono text-xs'>IDs : #formulaire, #nom, #email, #motdepasse, #erreur-nom, #erreur-email, #erreur-motdepasse, #message</span><br>Validez les 3 champs EN M&Ecirc;ME TEMPS. Videz d'abord les 3 erreurs. Nom vide &rarr; #erreur-nom. Email sans '@' &rarr; #erreur-email. Mot de passe &lt; 6 &rarr; #erreur-motdepasse. Si TOUT est bon &rarr; #message = 'Inscription reussie'.",
+                formHtml: formulaire(champ('nom', 'Nom', 'text', 'Votre nom') + champ('email', 'Email', 'text', 'exemple@mail.com') + champ('motdepasse', 'Mot de passe', 'password', '6 caracteres min'), "S'inscrire"),
+                ids: [
+                    { id: 'formulaire', desc: 'le formulaire a ecouter' },
+                    { id: 'nom', desc: 'champ Nom' },
+                    { id: 'email', desc: 'champ Email' },
+                    { id: 'motdepasse', desc: 'champ Mot de passe' },
+                    { id: 'erreur-nom', desc: 'erreur sous Nom' },
+                    { id: 'erreur-email', desc: 'erreur sous Email' },
+                    { id: 'erreur-motdepasse', desc: 'erreur sous Mot de passe' },
+                    { id: 'message', desc: 'message de succes' }
+                ],
+                hint: "document.getElementById('formulaire').addEventListener('submit', (e) => { e.preventDefault(); const nom = document.getElementById('nom').value; const email = document.getElementById('email').value; const mdp = document.getElementById('motdepasse').value; document.getElementById('erreur-nom').textContent = ''; document.getElementById('erreur-email').textContent = ''; document.getElementById('erreur-motdepasse').textContent = ''; let ok = true; if (nom === '') { document.getElementById('erreur-nom').textContent = 'Nom obligatoire'; ok = false; } if (!email.includes('@')) { document.getElementById('erreur-email').textContent = 'Email invalide'; ok = false; } if (mdp.length < 6) { document.getElementById('erreur-motdepasse').textContent = '6 caracteres minimum'; ok = false; } if (ok) { document.getElementById('message').textContent = 'Inscription reussie'; } });",
+                expected: "Tout faux -> les 3 erreurs s'affichent\nTout bon  -> #message : Inscription reussie",
+                explication: "C'est le coeur d'un vrai formulaire : on verifie chaque champ, on affiche chaque erreur sous son champ, et on n'affiche le succes que si la variable 'ok' est restee vraie.",
+                validate: (code) => /addEventListener\s*\(\s*['\"]submit['\"]/.test(code) && /erreur-nom/.test(code) && /erreur-email/.test(code) && /erreur-motdepasse/.test(code) && /length/.test(code) && /includes/.test(code),
+                triggers: [
+                    { label: "\u{1F6AB} Tout faux", values: { nom: '', email: 'bonjour', motdepasse: '12' } },
+                    { label: "✅ Tout bon", values: { nom: 'Anli', email: 'anli@mail.com', motdepasse: 'secret123' } }
+                ],
+                scenarios: [
+                    { values: { nom: '', email: 'bonjour', motdepasse: '12' }, expect: { 'erreur-nom': /\S/, 'erreur-email': /\S/, 'erreur-motdepasse': /\S/ } },
+                    { values: { nom: 'Anli', email: 'anli@mail.com', motdepasse: 'secret123' }, expect: { 'erreur-nom': '', 'erreur-email': '', 'erreur-motdepasse': '', 'message': /reussi/i } }
+                ]
             },
             {
                 id: 6,
-                category: "Validation",
-                text: "&Agrave; l'envoi : si l'<strong>#email</strong> ne contient pas le caract&egrave;re <strong>@</strong> (utilisez <strong>.includes('@')</strong>), affichez 'Email invalide'.",
-                hint: "document.getElementById('formulaire').addEventListener('submit', (e) => { e.preventDefault(); const email = document.getElementById('email').value; if (!email.includes('@')) { console.log('Email invalide'); } else { console.log('Email OK'); } });",
-                expected: "// Email invalide  (pour 'bonjour')",
-                explication: ".includes('@') renvoie true si la chaine contient un @. Le ! inverse le test. Le declencheur envoie 'bonjour' (sans @).",
-                validate: (code) => /addEventListener\s*\(\s*['\"]submit['\"]/.test(code) && code.includes('@') && /includes/.test(code),
-                fire: () => fireSubmit({ nom: 'Anli', email: 'bonjour', motdepasse: 'secret123', age: '25' }),
-                validateOutput: (output) => output.toLowerCase().includes('invalide')
+                category: "Calcul d'age",
+                text: "<span class='text-cyan-400 font-mono text-xs'>IDs : #formulaire, #annee, #erreur-annee, #message</span><br>Formulaire de calcul d'&acirc;ge. Lisez #annee et convertissez avec <strong>Number(...)</strong>. Si le champ est vide ou n'est pas un nombre (<strong>isNaN</strong>) &rarr; #erreur-annee = 'Annee invalide'. Sinon <strong>age = " + ANNEE_ACTUELLE + " - annee</strong> et #message = 'Vous avez X ans'.",
+                formHtml: formulaire(champ('annee', 'Annee de naissance', 'number', 'Ex : 2000'), "Calculer mon age"),
+                ids: [
+                    { id: 'formulaire', desc: 'le formulaire a ecouter' },
+                    { id: 'annee', desc: 'annee de naissance (Number(.value))' },
+                    { id: 'erreur-annee', desc: 'erreur sous le champ Annee' },
+                    { id: 'message', desc: 'resultat : age calcule' }
+                ],
+                hint: "document.getElementById('formulaire').addEventListener('submit', (e) => { e.preventDefault(); const valeur = document.getElementById('annee').value; const annee = Number(valeur); if (valeur === '' || isNaN(annee)) { document.getElementById('erreur-annee').textContent = 'Annee invalide'; } else { document.getElementById('erreur-annee').textContent = ''; const age = " + ANNEE_ACTUELLE + " - annee; document.getElementById('message').textContent = 'Vous avez ' + age + ' ans'; } });",
+                expected: "vide   -> #erreur-annee : Annee invalide\n2000   -> #message : Vous avez 26 ans",
+                explication: "On applique les operateurs (soustraction) sur des nombres. Number(...) convertit la saisie (toujours une chaine) en nombre pour pouvoir calculer.",
+                validate: (code) => /addEventListener\s*\(\s*['\"]submit['\"]/.test(code) && /Number/.test(code) && /erreur-annee/.test(code) && /2026/.test(code),
+                triggers: [
+                    { label: "⚠ Vide", values: { annee: '' } },
+                    { label: "\u{1F382} Annee 2000", values: { annee: '2000' } }
+                ],
+                scenarios: [
+                    { values: { annee: '' }, expect: { 'erreur-annee': /invalide/i } },
+                    { values: { annee: '2000' }, expect: { 'erreur-annee': '', 'message': /26\s*ans/i } }
+                ]
             },
             {
                 id: 7,
-                category: "Validation",
-                text: "&Agrave; l'envoi : utilisez <strong>.trim()</strong> sur le <strong>#nom</strong>. Si <strong>nom.trim() === ''</strong> (que des espaces), affichez 'Nom vide'.",
-                hint: "document.getElementById('formulaire').addEventListener('submit', (e) => { e.preventDefault(); const nom = document.getElementById('nom').value; if (nom.trim() === '') { console.log('Nom vide'); } else { console.log(nom); } });",
-                expected: "// Nom vide  (pour '   ')",
-                explication: ".trim() supprime les espaces au debut et a la fin. Une saisie de plusieurs espaces devient une chaine vide apres trim().",
-                validate: (code) => /addEventListener\s*\(\s*['\"]submit['\"]/.test(code) && /trim/.test(code),
-                fire: () => fireSubmit({ nom: '   ', email: 'a@b.com', motdepasse: 'secret123', age: '25' }),
-                validateOutput: (output) => output.toLowerCase().includes('vide')
+                category: "Calcul (moyenne)",
+                text: "<span class='text-cyan-400 font-mono text-xs'>IDs : #formulaire, #note1, #note2, #note3, #erreur-notes, #message</span><br>Calculez la moyenne de 3 notes. Convertissez chaque champ en nombre. Si une note est &lt; 0 <strong>OU</strong> &gt; 20 &rarr; #erreur-notes = 'Notes entre 0 et 20'. Sinon <strong>moyenne = (note1 + note2 + note3) / 3</strong> et #message = 'Moyenne : X'.",
+                formHtml: formulaire(`<div class="form-grid" style="grid-template-columns:repeat(3,1fr)">${champNu('note1', 'Note 1', 'number', '/20')}${champNu('note2', 'Note 2', 'number', '/20')}${champNu('note3', 'Note 3', 'number', '/20')}</div>${zoneErreur('erreur-notes')}`, "Calculer la moyenne"),
+                ids: [
+                    { id: 'formulaire', desc: 'le formulaire a ecouter' },
+                    { id: 'note1', desc: 'note 1 (Number(.value))' },
+                    { id: 'note2', desc: 'note 2 (Number(.value))' },
+                    { id: 'note3', desc: 'note 3 (Number(.value))' },
+                    { id: 'erreur-notes', desc: 'erreur commune aux 3 notes' },
+                    { id: 'message', desc: 'resultat : la moyenne' }
+                ],
+                hint: "document.getElementById('formulaire').addEventListener('submit', (e) => { e.preventDefault(); const n1 = Number(document.getElementById('note1').value); const n2 = Number(document.getElementById('note2').value); const n3 = Number(document.getElementById('note3').value); if (n1 < 0 || n1 > 20 || n2 < 0 || n2 > 20 || n3 < 0 || n3 > 20) { document.getElementById('erreur-notes').textContent = 'Notes entre 0 et 20'; } else { document.getElementById('erreur-notes').textContent = ''; const moyenne = (n1 + n2 + n3) / 3; document.getElementById('message').textContent = 'Moyenne : ' + moyenne; } });",
+                expected: "25/10/10 -> #erreur-notes : Notes entre 0 et 20\n12/15/9  -> #message : Moyenne : 12",
+                explication: "On additionne les 3 notes puis on divise par 3. On valide d'abord que chaque note est dans la plage 0-20 avec l'operateur OU (||).",
+                validate: (code) => /addEventListener\s*\(\s*['\"]submit['\"]/.test(code) && /note1/.test(code) && /note3/.test(code) && /Number/.test(code) && /erreur-notes/.test(code) && (/\/\s*3/.test(code) || /moyenne/i.test(code)),
+                triggers: [
+                    { label: "⚠ Note > 20", values: { note1: '25', note2: '10', note3: '10' } },
+                    { label: "✅ 12 / 15 / 9", values: { note1: '12', note2: '15', note3: '9' } }
+                ],
+                scenarios: [
+                    { values: { note1: '25', note2: '10', note3: '10' }, expect: { 'erreur-notes': /0 et 20|entre/i } },
+                    { values: { note1: '12', note2: '15', note3: '9' }, expect: { 'erreur-notes': '', 'message': /12/ } }
+                ]
             },
             {
                 id: 8,
-                category: "Validation",
-                text: "&Agrave; l'envoi : convertissez le champ <strong>#age</strong> en nombre (<strong>Number(...)</strong>). Si l'&acirc;ge est inf&eacute;rieur &agrave; <strong>18</strong>, affichez 'Mineur', sinon 'Majeur'.",
-                hint: "document.getElementById('formulaire').addEventListener('submit', (e) => { e.preventDefault(); const age = Number(document.getElementById('age').value); if (age < 18) { console.log('Mineur'); } else { console.log('Majeur'); } });",
-                expected: "// Mineur  (pour age 15)",
-                explication: ".value renvoie une chaine ; Number(...) la convertit en nombre pour pouvoir la comparer a 18. Le declencheur envoie 15.",
-                validate: (code) => /addEventListener\s*\(\s*['\"]submit['\"]/.test(code) && /18/.test(code) && /age/i.test(code),
-                fire: () => fireSubmit({ nom: 'Anli', email: 'a@b.com', motdepasse: 'secret123', age: '15' }),
-                validateOutput: (output) => output.toLowerCase().includes('mineur')
+                category: "Equation (1 inconnue)",
+                text: "<span class='text-cyan-400 font-mono text-xs'>IDs : #formulaire, #a, #b, #erreur-a, #message</span><br>R&eacute;solvez l'&eacute;quation <strong>a&middot;x + b = 0</strong>, donc <strong>x = -b / a</strong>. Convertissez #a et #b en nombre. Si #a vaut 0 &rarr; #erreur-a = 'a ne doit pas etre 0' (division impossible). Sinon #message = 'x = ' + x.",
+                formHtml: formulaire(`<div class="form-grid">${champ('a', 'a', 'number', 'ex: 2')}${champNu('b', 'b', 'number', 'ex: -4')}</div>`, "Resoudre"),
+                ids: [
+                    { id: 'formulaire', desc: 'le formulaire a ecouter' },
+                    { id: 'a', desc: 'coefficient a (Number(.value))' },
+                    { id: 'b', desc: 'coefficient b (Number(.value))' },
+                    { id: 'erreur-a', desc: 'erreur si a vaut 0' },
+                    { id: 'message', desc: 'resultat : la valeur de x' }
+                ],
+                hint: "document.getElementById('formulaire').addEventListener('submit', (e) => { e.preventDefault(); const a = Number(document.getElementById('a').value); const b = Number(document.getElementById('b').value); if (a === 0) { document.getElementById('erreur-a').textContent = 'a ne doit pas etre 0'; } else { document.getElementById('erreur-a').textContent = ''; const x = -b / a; document.getElementById('message').textContent = 'x = ' + x; } });",
+                expected: "a=0, b=4   -> #erreur-a : a ne doit pas etre 0\na=2, b=-4  -> #message : x = 2",
+                explication: "Une equation du premier degre se resout avec x = -b/a. On verifie d'abord que a n'est pas 0, car diviser par 0 est impossible.",
+                validate: (code) => /addEventListener\s*\(\s*['\"]submit['\"]/.test(code) && /erreur-a/.test(code) && /Number/.test(code) && /\/\s*a/.test(code),
+                triggers: [
+                    { label: "⚠ a = 0", values: { a: '0', b: '4' } },
+                    { label: "✅ 2x - 4 = 0", values: { a: '2', b: '-4' } }
+                ],
+                scenarios: [
+                    { values: { a: '0', b: '4' }, expect: { 'erreur-a': /doit|0/i } },
+                    { values: { a: '2', b: '-4' }, expect: { 'erreur-a': '', 'message': /x\s*=\s*2$/ } }
+                ]
             },
             {
                 id: 9,
-                category: "Validation",
-                text: "&Agrave; l'envoi : si <strong>#nom</strong> n'est pas vide <strong>ET</strong> <strong>#email</strong> contient <strong>@</strong>, affichez 'Bienvenue ' + nom, sinon 'Formulaire invalide'.",
-                hint: "document.getElementById('formulaire').addEventListener('submit', (e) => { e.preventDefault(); const nom = document.getElementById('nom').value; const email = document.getElementById('email').value; if (nom !== '' && email.includes('@')) { console.log('Bienvenue ' + nom); } else { console.log('Formulaire invalide'); } });",
-                expected: "// Bienvenue Anli",
-                explication: "L'operateur && combine deux conditions : les DEUX doivent etre vraies. Ici nom rempli ET email valide : le message de bienvenue s'affiche.",
-                validate: (code) => /addEventListener\s*\(\s*['\"]submit['\"]/.test(code) && /&&/.test(code) && code.includes('@'),
-                fire: () => fireSubmit({ nom: 'Anli', email: 'a@b.com', motdepasse: 'secret123', age: '25' }),
-                validateOutput: (output) => output.toLowerCase().includes('bienvenue')
+                category: "Equation 2nd degre",
+                text: "<span class='text-cyan-400 font-mono text-xs'>IDs : #formulaire, #a, #b, #c, #erreur-a, #message</span><br>R&eacute;solvez l'&eacute;quation du second degr&eacute; <strong>a&middot;x&sup2; + b&middot;x + c = 0</strong>. Convertissez a, b, c en nombre. Si #a vaut 0 &rarr; #erreur-a = 'a ne doit pas etre 0'. Sinon calculez le discriminant <strong>delta = b&middot;b - 4&middot;a&middot;c</strong> : si delta &lt; 0 &rarr; #message = 'Pas de solution reelle' ; si delta = 0 &rarr; une solution <strong>x = -b / (2&middot;a)</strong> ; si delta &gt; 0 &rarr; deux solutions avec <strong>Math.sqrt(delta)</strong> et #message = 'x1 = ... ; x2 = ...'.",
+                formHtml: formulaire(`<label class="text-xs text-slate-400">a x&sup2; + b x + c = 0</label><div class="form-grid" style="grid-template-columns:repeat(3,1fr)">${champ('a', 'a', 'number', 'ex: 1')}${champNu('b', 'b', 'number', 'ex: -3')}${champNu('c', 'c', 'number', 'ex: 2')}</div>`, "Resoudre"),
+                ids: [
+                    { id: 'formulaire', desc: 'le formulaire a ecouter' },
+                    { id: 'a', desc: 'coefficient a (Number(.value))' },
+                    { id: 'b', desc: 'coefficient b (Number(.value))' },
+                    { id: 'c', desc: 'coefficient c (Number(.value))' },
+                    { id: 'erreur-a', desc: 'erreur si a vaut 0' },
+                    { id: 'message', desc: 'resultat : la ou les solutions' }
+                ],
+                hint: "document.getElementById('formulaire').addEventListener('submit', (e) => { e.preventDefault(); const a = Number(document.getElementById('a').value); const b = Number(document.getElementById('b').value); const c = Number(document.getElementById('c').value); if (a === 0) { document.getElementById('erreur-a').textContent = 'a ne doit pas etre 0'; } else { document.getElementById('erreur-a').textContent = ''; const delta = b * b - 4 * a * c; if (delta < 0) { document.getElementById('message').textContent = 'Pas de solution reelle'; } else if (delta === 0) { const x = -b / (2 * a); document.getElementById('message').textContent = 'x = ' + x; } else { const x1 = (-b - Math.sqrt(delta)) / (2 * a); const x2 = (-b + Math.sqrt(delta)) / (2 * a); document.getElementById('message').textContent = 'x1 = ' + x1 + ' ; x2 = ' + x2; } } });",
+                expected: "a=0            -> #erreur-a : a ne doit pas etre 0\nx2+1 (delta<0) -> #message : Pas de solution reelle\nx2-3x+2 (>0)   -> #message : x1 = 1 ; x2 = 2",
+                explication: "On calcule le discriminant delta = b*b - 4*a*c. Son signe donne le nombre de solutions reelles (0, 1 ou 2). Math.sqrt(delta) calcule la racine carree pour les deux solutions.",
+                validate: (code) => /addEventListener\s*\(\s*['\"]submit['\"]/.test(code) && /erreur-a/.test(code) && /Number/.test(code) && /sqrt/i.test(code) && /4\s*\*\s*a\s*\*\s*c|delta/i.test(code),
+                triggers: [
+                    { label: "⚠ a = 0", values: { a: '0', b: '2', c: '1' } },
+                    { label: "Δ<0 : x²+1", values: { a: '1', b: '0', c: '1' } },
+                    { label: "✅ x²-3x+2", values: { a: '1', b: '-3', c: '2' } }
+                ],
+                scenarios: [
+                    { values: { a: '0', b: '2', c: '1' }, expect: { 'erreur-a': /doit|0/i } },
+                    { values: { a: '1', b: '0', c: '1' }, expect: { 'erreur-a': '', 'message': /pas de solution|reel/i } },
+                    { values: { a: '1', b: '-3', c: '2' }, expect: { 'erreur-a': '', 'message': /x1\s*=\s*1\s*;\s*x2\s*=\s*2/ } }
+                ]
             },
             {
                 id: 10,
-                category: "Recap",
-                text: "R&eacute;cap : &agrave; l'envoi, bloquez le rechargement et affichez un r&eacute;capitulatif <strong>'Nom: ... - Email: ...'</strong> avec les valeurs de #nom et #email.",
-                hint: "document.getElementById('formulaire').addEventListener('submit', (e) => { e.preventDefault(); const nom = document.getElementById('nom').value; const email = document.getElementById('email').value; console.log('Nom: ' + nom + ' - Email: ' + email); });",
-                expected: "// Nom: Anli - Email: anli@mail.com",
-                explication: "On rassemble tout : ecoute du submit, preventDefault, lecture des champs et affichage formate avec la concatenation (+).",
-                validate: (code) => /addEventListener\s*\(\s*['\"]submit['\"]/.test(code) && /preventDefault/.test(code) && /value/.test(code),
-                fire: () => fireSubmit({ nom: 'Anli', email: 'anli@mail.com', motdepasse: 'secret123', age: '25' }),
-                validateOutput: (output) => output.toLowerCase().includes('anli')
+                category: "Formulaire complet",
+                text: "<span class='text-cyan-400 font-mono text-xs'>IDs : #formulaire, #nom, #email, #age, #conditions, #erreur-nom, #erreur-email, #erreur-age, #erreur-conditions, #message</span><br>Formulaire d'inscription final. Videz toutes les erreurs. Nom vide &rarr; #erreur-nom. Email sans '@' &rarr; #erreur-email. &Acirc;ge (Number) &lt; 18 &rarr; #erreur-age = 'Vous devez etre majeur'. Case #conditions non coch&eacute;e &rarr; #erreur-conditions. Si TOUT est valide &rarr; #message = 'Inscription reussie'.",
+                formHtml: formulaire(champ('nom', 'Nom', 'text', 'Votre nom') + champ('email', 'Email', 'text', 'exemple@mail.com') + champ('age', 'Age', 'number', 'ex: 20') + caseCocher('conditions', "J'accepte les conditions"), "Creer mon compte"),
+                ids: [
+                    { id: 'formulaire', desc: 'le formulaire a ecouter' },
+                    { id: 'nom', desc: 'champ Nom' },
+                    { id: 'email', desc: 'champ Email' },
+                    { id: 'age', desc: 'champ Age (Number(.value))' },
+                    { id: 'conditions', desc: 'case a cocher (.checked)' },
+                    { id: 'erreur-nom', desc: 'erreur sous Nom' },
+                    { id: 'erreur-email', desc: 'erreur sous Email' },
+                    { id: 'erreur-age', desc: 'erreur sous Age' },
+                    { id: 'erreur-conditions', desc: 'erreur sous la case' },
+                    { id: 'message', desc: 'message de succes' }
+                ],
+                hint: "document.getElementById('formulaire').addEventListener('submit', (e) => { e.preventDefault(); const nom = document.getElementById('nom').value; const email = document.getElementById('email').value; const age = Number(document.getElementById('age').value); const cgu = document.getElementById('conditions').checked; document.getElementById('erreur-nom').textContent = ''; document.getElementById('erreur-email').textContent = ''; document.getElementById('erreur-age').textContent = ''; document.getElementById('erreur-conditions').textContent = ''; let ok = true; if (nom === '') { document.getElementById('erreur-nom').textContent = 'Nom obligatoire'; ok = false; } if (!email.includes('@')) { document.getElementById('erreur-email').textContent = 'Email invalide'; ok = false; } if (age < 18) { document.getElementById('erreur-age').textContent = 'Vous devez etre majeur'; ok = false; } if (!cgu) { document.getElementById('erreur-conditions').textContent = 'Acceptez les conditions'; ok = false; } if (ok) { document.getElementById('message').textContent = 'Inscription reussie'; } });",
+                expected: "Tout faux -> les 4 erreurs s'affichent\nTout bon  -> #message : Inscription reussie",
+                explication: "Le formulaire final reunit TOUT : lecture de champs texte, nombre (Number), case a cocher (.checked), validations multiples, erreurs par champ et message de succes.",
+                validate: (code) => /addEventListener\s*\(\s*['\"]submit['\"]/.test(code) && /erreur-nom/.test(code) && /erreur-email/.test(code) && /erreur-age/.test(code) && /erreur-conditions/.test(code) && /checked/.test(code) && /includes/.test(code) && /Number/.test(code),
+                triggers: [
+                    { label: "\u{1F6AB} Tout faux", values: { nom: '', email: 'bonjour', age: '15', conditions: false } },
+                    { label: "✅ Tout bon", values: { nom: 'Anli', email: 'anli@mail.com', age: '25', conditions: true } }
+                ],
+                scenarios: [
+                    { values: { nom: '', email: 'bonjour', age: '15', conditions: false }, expect: { 'erreur-nom': /\S/, 'erreur-email': /\S/, 'erreur-age': /\S/, 'erreur-conditions': /\S/ } },
+                    { values: { nom: 'Anli', email: 'anli@mail.com', age: '25', conditions: true }, expect: { 'erreur-nom': '', 'erreur-email': '', 'erreur-age': '', 'erreur-conditions': '', 'message': /reussi/i } }
+                ]
             }
         ];
 
@@ -981,7 +1231,6 @@ form.<span class="function">addEventListener</span>(<span class="string">"submit
         let timerInterval = null;
         let studentName = '';
         let studentGroup = '';
-        let consoleOutput = [];
         let finalElapsed = 0;
         let missionLog = [];
 
@@ -1057,60 +1306,81 @@ form.<span class="function">addEventListener</span>(<span class="string">"submit
             startTime = Date.now() - (state.elapsed || 0) * 1000;
             timerInterval = setInterval(updateTimer, 1000);
 
-            // Reinstalle la capture console + la zone de test, comme dans startGame
-            installCapture();
+            // Reinitialise la zone de test, comme dans startGame
             resetSandbox();
             displayMission(currentMission);
             return true;
         }
 
-        // ==================== CAPTURE CONSOLE & ALERT ====================
-        const originalLog = console.log;
-        const originalAlert = window.alert;
-        function installCapture() {
-            console.log = function(...args) {
-                consoleOutput.push(args.map(a => (typeof a === 'object' && a !== null) ? JSON.stringify(a) : String(a)).join(' '));
-                renderConsole();
-            };
-            window.alert = function(msg) {
-                consoleOutput.push('alert: ' + msg);
-                renderConsole();
-            };
+        // ==================== LECTURE DU MESSAGE & ZONE DE RETOUR ====================
+        // Le code de l'etudiant doit ecrire dans la balise <p id="message">.
+        // getMessage() recupere le texte actuellement affiche dans cette balise.
+        function getMessage() {
+            const el = document.getElementById('message');
+            return el ? (el.textContent || '').trim() : '';
         }
 
-        function renderConsole() {
-            const outputDiv = document.getElementById('console-output');
-            if (!outputDiv) return;
-            if (consoleOutput.length === 0) {
-                outputDiv.innerHTML = '<span class="text-slate-500">// Remplissez le formulaire et envoyez-le (ou utilisez un declencheur)...</span>';
-                return;
-            }
-            outputDiv.innerHTML = consoleOutput.map(o =>
-                o.startsWith('ERROR:')
-                    ? `<div class="text-red-400">${o}</div>`
-                    : (o.startsWith('alert:') ? `<div class="text-cyan-400">&#x1F514; ${o}</div>` : `<div class="text-green-400">&gt; ${o}</div>`)
-            ).join('');
-            outputDiv.scrollTop = outputDiv.scrollHeight;
+        // Affiche un retour (validation, erreur, aide) dans la zone #feedback.
+        function setFeedback(html) {
+            const fb = document.getElementById('feedback');
+            if (fb) fb.innerHTML = html;
         }
 
-        // ==================== ZONE DE TEST : RESET & DECLENCHEUR ====================
+        const FEEDBACK_DEFAULT = '<span class="text-slate-500">// Le r&eacute;sultat de votre code s\'affiche dans <strong>#message</strong> (zone de test ci-dessus). Ici appara&icirc;t la validation de la mission.</span>';
+
+        // ==================== ZONE DE TEST : RESET, REMPLISSAGE & DECLENCHEURS ====================
+        // Construit l'encadre rappelant les IDs du formulaire de la mission courante
+        function buildIdsBox(ids) {
+            const items = (ids || []).map(x => `<li><code>#${x.id}</code> &mdash; ${x.desc}</li>`).join('');
+            return `<div class="ids-box"><div class="ids-box-title">&#x1F516; IDs de ce formulaire</div><ul>${items}</ul></div>`;
+        }
+
+        // Reaffiche le formulaire de la mission courante (encadre IDs + formulaire + #message)
         function resetSandbox() {
-            document.getElementById('sandbox').innerHTML = SANDBOX_HTML;
+            const mission = missions[currentMission];
+            if (!mission) return; // ex: apres la derniere mission (fin du TP)
+            document.getElementById('sandbox').innerHTML = buildIdsBox(mission.ids) + mission.formHtml;
         }
 
-        function setFields(v) {
-            v = v || {};
-            ['nom', 'email', 'motdepasse', 'age'].forEach(id => {
+        // Remplit les champs (texte/nombre via .value, cases via .checked)
+        function setFieldsGeneric(values) {
+            values = values || {};
+            Object.keys(values).forEach(id => {
                 const el = document.getElementById(id);
-                if (el && v[id] !== undefined) el.value = v[id];
+                if (!el) return;
+                if (el.type === 'checkbox') el.checked = !!values[id];
+                else el.value = values[id];
             });
         }
 
-        function fireSubmit(v) {
-            setFields(v);
+        // Remplit puis envoie le formulaire (declencheur manuel)
+        function fire(values) {
+            setFieldsGeneric(values);
             const f = document.getElementById('formulaire');
             // dispatchEvent (et non submit reel) => pas de navigation, preventDefault reste pedagogique.
             if (f) f.dispatchEvent(new Event('submit', { bubbles: true, cancelable: true }));
+        }
+
+        // Clic sur un bouton declencheur de la mission courante
+        function runTrigger(i) {
+            const t = missions[currentMission].triggers[i];
+            if (t) fire(t.values);
+        }
+
+        // (Re)dessine les boutons declencheurs sous le formulaire
+        function renderTriggers() {
+            const box = document.getElementById('triggers');
+            if (!box || !missions[currentMission]) return;
+            const triggers = missions[currentMission].triggers || [];
+            let html = '<span class="text-xs text-slate-500 w-full">D&eacute;clencheurs (remplissent puis envoient le formulaire) :</span>';
+            html += triggers.map((t, i) => `<button type="button" class="trigger-btn" onclick="runTrigger(${i})">${t.label}</button>`).join('');
+            box.innerHTML = html;
+        }
+
+        // Compare le texte obtenu a l'attendu : '' => doit etre vide ; sinon expression reguliere
+        function matchExpect(txt, exp) {
+            if (exp === '') return txt === '';
+            return exp.test(txt);
         }
 
         // ==================== HELP PANEL ====================
@@ -1152,7 +1422,6 @@ form.<span class="function">addEventListener</span>(<span class="string">"submit
             startTime = Date.now();
             timerInterval = setInterval(updateTimer, 1000);
             missionLog = missions.map(() => ({ status: 'non-traitee', code: '' }));
-            installCapture();
             resetSandbox();
             displayMission(0);
             saveState();
@@ -1172,11 +1441,11 @@ form.<span class="function">addEventListener</span>(<span class="string">"submit
             document.getElementById('mission-category').textContent = mission.category;
             document.getElementById('mission-desc').innerHTML = mission.text;
             document.getElementById('expected-text').textContent = mission.expected;
-            document.getElementById('hint-text').innerHTML = mission.hint;
+            document.getElementById('hint-text').textContent = mission.hint;
             document.getElementById('mission-hint').classList.add('hidden');
             resetSandbox();
-            consoleOutput = [];
-            renderConsole();
+            renderTriggers();
+            setFeedback(FEEDBACK_DEFAULT);
             updateProgress();
             updateScore();
         }
@@ -1195,83 +1464,115 @@ form.<span class="function">addEventListener</span>(<span class="string">"submit
         }
 
         // ==================== CODE EXECUTION ====================
+        // Reinitialise la zone de test puis execute le code de l'etudiant
+        // (qui attache son ecouteur sur #formulaire). Retourne { ok, error }.
         function attachListeners(code) {
             resetSandbox();
-            consoleOutput = [];
             try {
                 eval(code);
-                renderConsole();
-                return true;
+                return { ok: true, error: null };
             } catch (error) {
-                consoleOutput = ['ERROR: ' + error.message];
-                renderConsole();
-                return false;
+                return { ok: false, error: error.message };
             }
         }
 
         function runCode() {
             const code = document.getElementById('code-input').value;
-            const ok = attachListeners(code);
-            if (ok) {
-                const outputDiv = document.getElementById('console-output');
-                if (consoleOutput.length === 0) {
-                    outputDiv.innerHTML = '<span class="text-cyan-300">&#x2705; Ecouteur attache. Remplissez le formulaire et envoyez-le, ou utilisez un declencheur ci-dessus.</span>';
+            const res = attachListeners(code);
+            if (res.ok) {
+                setFeedback('<span class="text-cyan-300">&#x2705; Ecouteur attach&eacute;. Remplissez le formulaire et envoyez-le, ou utilisez un d&eacute;clencheur ci-dessus. Le r&eacute;sultat appara&icirc;tra dans <strong>#message</strong>.</span>');
+            } else {
+                setFeedback('<div class="text-red-400">&#x274C; ERREUR : ' + res.error + '</div>');
+            }
+        }
+
+        // Joue un scenario : reinitialise le formulaire, re-attache le code, remplit puis envoie.
+        // Renvoie { ok, raison } selon que le DOM (erreurs + message) correspond a l'attendu.
+        function jouerScenario(code, sc) {
+            resetSandbox();
+            try {
+                eval(code);
+            } catch (e) {
+                return { ok: false, raison: 'Erreur JavaScript : ' + e.message };
+            }
+            setFieldsGeneric(sc.values);
+            const f = document.getElementById('formulaire');
+            try {
+                if (f) f.dispatchEvent(new Event('submit', { bubbles: true, cancelable: true }));
+            } catch (e) {
+                return { ok: false, raison: 'Erreur a l\'envoi : ' + e.message };
+            }
+            for (const id in sc.expect) {
+                const el = document.getElementById(id);
+                const txt = el ? (el.textContent || '').trim() : '';
+                if (!matchExpect(txt, sc.expect[id])) {
+                    const attendu = sc.expect[id] === '' ? 'devrait etre VIDE' : 'ne correspond pas';
+                    return { ok: false, raison: `#${id} ${attendu} (obtenu : "${txt}")` };
                 }
             }
+            return { ok: true };
         }
 
         function validateCode() {
             const code = document.getElementById('code-input').value;
             const mission = missions[currentMission];
 
-            const ok = attachListeners(code);
-            if (!ok) {
-                displayError();
-                errorsCount++;
-                score -= CONFIG.errorPenalty;
-                updateScore();
+            // 1) Le code doit s'executer sans erreur
+            const res = attachListeners(code);
+            if (!res.ok) {
+                setFeedback('<div class="text-red-400 font-bold">&#x274C; ERREUR : ' + res.error + '</div>');
+                echec();
                 return;
             }
 
-            consoleOutput = [];
-            try {
-                mission.fire();
-            } catch (e) {
-                consoleOutput.push('ERROR: ' + e.message);
+            // 2) Le code doit utiliser les bons concepts
+            if (!mission.validate(code)) {
+                displayError("Votre code ne semble pas utiliser tout ce qui est demande (relisez l'objectif et les IDs).");
+                echec();
+                return;
             }
-            const output = consoleOutput.join('\n');
-            renderConsole();
 
-            if (mission.validate(code) && mission.validateOutput(output)) {
+            // 3) Chaque scenario remplit le formulaire et verifie les erreurs / le message
+            let echecScenario = null;
+            for (const sc of mission.scenarios) {
+                const r = jouerScenario(code, sc);
+                if (!r.ok) { echecScenario = r.raison; break; }
+            }
+
+            if (!echecScenario) {
                 displaySuccess();
                 missionsPassed++;
                 missionLog[currentMission] = { status: 'reussie', code: code };
                 saveState();
                 setTimeout(() => nextMission(), 1500);
             } else {
-                displayError();
-                errorsCount++;
-                score -= CONFIG.errorPenalty;
-                updateScore();
-                saveState();
+                displayError(echecScenario);
+                echec();
             }
         }
 
-        function displaySuccess() {
-            const outputDiv = document.getElementById('console-output');
-            outputDiv.innerHTML += '<div class="text-green-400 font-bold mt-2 pt-2 border-t border-green-500/30">&#x2705; Mission r&eacute;ussie !</div>';
+        // Penalite + sauvegarde apres un echec
+        function echec() {
+            errorsCount++;
+            score -= CONFIG.errorPenalty;
+            updateScore();
+            saveState();
         }
 
-        function displayError() {
-            const outputDiv = document.getElementById('console-output');
-            outputDiv.innerHTML += '<div class="text-red-400 font-bold mt-2 pt-2 border-t border-red-500/30">&#x274C; Ce n\'est pas tout &agrave; fait &ccedil;a. V&eacute;rifiez l\'&eacute;v&eacute;nement submit, preventDefault et le message affich&eacute;, puis r&eacute;essayez !</div>';
+        function displaySuccess() {
+            setFeedback('<div class="text-green-400 font-bold">&#x2705; Mission r&eacute;ussie ! Le formulaire se comporte comme attendu.</div>');
+        }
+
+        function displayError(detail) {
+            const base = '&#x274C; Ce n\'est pas tout &agrave; fait &ccedil;a. V&eacute;rifiez l\'&eacute;coute du <strong>submit</strong>, le <strong>preventDefault()</strong>, vos conditions et les bons IDs (#erreur-... et #message).';
+            const extra = detail ? '<div class="text-amber-300 mt-1">&#x1F50E; ' + detail + '</div>' : '';
+            setFeedback('<div class="text-red-400 font-bold">' + base + extra + '</div>');
         }
 
         function clearCode() {
             document.getElementById('code-input').value = '';
             resetSandbox();
-            consoleOutput = [];
-            document.getElementById('console-output').innerHTML = '<span class="text-slate-500">// La sortie de votre code s\'affichera ici...</span>';
+            setFeedback(FEEDBACK_DEFAULT);
         }
 
         // ==================== HINTS & SKIP ====================
@@ -1448,7 +1749,7 @@ form.<span class="function">addEventListener</span>(<span class="string">"submit
             doc.setFont('helvetica', 'normal');
             doc.setFontSize(11);
             doc.setTextColor(200, 212, 228);
-            doc.text('TP Formulaires : submit, preventDefault, input.value & validation', margin, 68);
+            doc.text('TP Formulaires : validations par champ, calculs et equations', margin, 68);
             y = 122;
 
             // ---------- ATTESTATION ----------
@@ -1488,10 +1789,10 @@ form.<span class="function">addEventListener</span>(<span class="string">"submit
 
             // ---------- SCORE PAR CATEGORIE ----------
             const catGroups = [
-                { label: 'Soumettre & recuperer (submit, value)', ids: [1, 2, 3] },
-                { label: 'Validation des champs', ids: [4, 5, 6, 7] },
-                { label: 'Validation avancee (nombre, &&)', ids: [8, 9] },
-                { label: 'Recapitulatif', ids: [10] }
+                { label: 'Inscription & validation par champ', ids: [1, 2, 3, 4, 5] },
+                { label: 'Calculs (age, moyenne)', ids: [6, 7] },
+                { label: 'Equations (1er et 2nd degre)', ids: [8, 9] },
+                { label: 'Formulaire complet', ids: [10] }
             ];
             doc.setFont('helvetica', 'bold');
             doc.setFontSize(13);
